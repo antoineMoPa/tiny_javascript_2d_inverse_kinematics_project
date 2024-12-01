@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Animation</title>
+  <style>
+    /* Minimal CSS normalization */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      display: block; /* Removes inline gap below the canvas */
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="animationCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById('animationCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Set canvas size to fill the screen
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas(); // Initial size setup
+
+    const mouse = [0, 0];
+    window.addEventListener('mousemove', (e) => {
+        mouse[0] = e.clientX;
+        mouse[1] = e.clientY;
+    });
+
+    const bones = [];
+
+    // Multiply two 3x3 matrices
+    function multiplyMatrices(a, b) {
+        const result = [];
+        for (let i = 0; i < 3; i++) {
+            result[i] = [];
+            for (let j = 0; j < 3; j++) {
+                result[i][j] = 0;
+                for (let k = 0; k < 3; k++) {
+                    result[i][j] += a[i][k] * b[k][j];
+                }
+            }
+        }
+        return result;
+    }
+
+    class Bone {
+        parent = null;
+        child = null;
+        // Position is relative to parent (if any)
+        // So x and y are only for the first bone in the chain
+        x = canvas.width / 2;
+        y = canvas.height / 2;
+        len = 100;
+        angle = 0.4 * Math.PI;
+        target = null;
+
+        constructor() {
+            bones.push(this);
+        }
+
+        setParent(parent) {
+            this.parent = parent;
+            parent.child = this;
+        }
+
+        applyConstraints() {
+            if (this.parent) {
+                this.x = this.parent.x + Math.cos(this.parent.angle) * this.parent.len;
+                this.y = this.parent.y + Math.sin(this.parent.angle) * this.parent.len;
+            }
+        }
+
+        selfTransformMatrix() {
+            const c = Math.cos(this.angle);
+            const s = Math.sin(this.angle);
+            const x = this.len * c;
+            const y = this.len * s;
+
+            return [
+                [c, -s, x],
+                [s, c, y],
+                [0, 0, 1]
+            ];
+        }
+
+        // Get 2d transformation matrix including parents
+        // for this joint.
+        transformMatrix(deltaAngle = 0) {
+            const matrix = this.selfTransformMatrix();
+            const parentMatrix = this.parent ? this.parent.transformMatrix() : [
+                [1, 0, this.x],
+                [0, 1, this.y],
+                [0, 0, 1]
+            ];
+
+            return multiplyMatrices(parentMatrix, matrix);
+        }
+
+        firstParent() {
+            let bone = this;
+            while (bone.parent) {
+                bone = bone.parent;
+            }
+            return bone;
+        }
+
+        lastChild() {
+            let bone = this;
+            while (bone.child) {
+                bone = bone.child;
+            }
+            return bone;
+        }
+
+        endEffectorImpact(deltaAngle = 0.01) {
+            const p0 = this.firstParent().transformMatrix();
+
+
+
+            const p1 = this.transformMatrix(deltaAngle);
+            const p2 = this.transformMatrix(-deltaAngle);
+
+
+        }
+
+        endEffectorPosition() {
+            while (this.parent) {
+                this.x = this.parent.x + Math.cos(this.parent.angle) * this.parent.len;
+                this.y = this.parent.y + Math.sin(this.parent.angle) * this.parent.len;
+            }
+            return [
+                this.x + Math.cos(this.angle) * this.len,
+                this.y + Math.sin(this.angle) * this.len
+            ];
+        }
+
+        // inverse kinematics
+        // find the impact of each joint on position
+        // iterate until we find the correct position
+        ik() {
+            // Find the impact of each joint on end effector position
+
+
+            const matrices = [];
+            let bone = this;
+
+            while (bone) {
+                matrices.push(bone.transformMatrix());
+                bone = bone.parent;
+            }
+
+            const MAX_IT = 30;
+            for (let i = 0; i < MAX_IT; i++) {
+            }
+        }
+
+        update() {
+            this.applyConstraints();
+        }
+
+        drawFromMatrices() {
+            ctx.beginPath();
+            const parentTransform = this.parent ? this.parent.transformMatrix() : [
+                [1, 0, this.x],
+                [0, 1, this.y],
+                [0, 0, 1]
+            ];
+            const matrix = this.transformMatrix();
+            const x1 = parentTransform[0][2];
+            const y1 = parentTransform[1][2];
+            const x2 = matrix[0][2];
+            const y2 = matrix[1][2];
+
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = 'white';
+            ctx.stroke();
+
+            // draw point 1
+            ctx.beginPath();
+            ctx.arc(x1, y1, 5, 0, Math.PI * 2);
+            ctx.fillStyle = 'red';
+            ctx.fill();
+
+            // draw point 2
+            ctx.beginPath();
+            ctx.arc(x2, y2, 5, 0, Math.PI * 2);
+            ctx.fillStyle = 'blue';
+            ctx.fill();
+        }
+
+        draw() {
+            this.drawFromMatrices();
+        }
+    }
+
+    const b1 = new Bone();
+    const b2 = new Bone();
+    b2.setParent(b1);
+
+    // Example of a basic animation loop
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Simple circle animation
+        const time = Date.now() / 1000; // Seconds
+        const radius = 50;
+        const x = canvas.width / 2 + Math.sin(time) * 100;
+        const y = canvas.height / 2 + Math.cos(time) * 100;
+
+        b2.target = mouse;
+        b2.ik();
+
+        bones.forEach(b => b.update());
+        bones.forEach(b => b.draw());
+
+        requestAnimationFrame(draw);
+    }
+
+    draw(); // Start the animation loop
+  </script>
+</body>
+</html>
