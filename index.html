@@ -25,6 +25,7 @@
   </style>
 </head>
 <body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
   <canvas id="animationCanvas"></canvas>
   <script>
     const canvas = document.getElementById('animationCanvas');
@@ -62,6 +63,80 @@
         return result;
     }
 
+    function subtractMatrices(a, b) {
+        const result = [];
+        for (let i = 0; i < 3; i++) {
+            result[i] = [];
+            for (let j = 0; j < 3; j++) {
+                result[i][j] = a[i][j] - b[i][j];
+            }
+        }
+        return result;
+    }
+
+    function subtractVector(a, b) {
+        return [a[0] - b[0], a[1] - b[1]];
+    }
+
+    function transpose(matrix) {
+        const result = [];
+        for (let i = 0; i < 3; i++) {
+            result[i] = [];
+            for (let j = 0; j < 3; j++) {
+                result[i][j] = matrix[j][i];
+            }
+        }
+        return result;
+    }
+
+    // Determinant of a 3x3 matrix
+    function determinant(matrix) {
+        return (
+            matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
+            matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
+            matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0])
+        );
+    }
+
+    // Inverse of a 3x3 matrix
+    function inverse(matrix) {
+        const det = determinant(matrix);
+        if (det === 0) {
+            console.error("Matrix is singular and cannot be inverted.");
+            // return identity matrix
+            return [
+                [1, 0, 0],
+                [0, 1, 0],
+                [0, 0, 1]
+            ];
+        }
+        const result = [];
+        result[0] = [
+            (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) / det,
+            (matrix[0][2] * matrix[2][1] - matrix[0][1] * matrix[2][2]) / det,
+            (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) / det,
+        ];
+        result[1] = [
+            (matrix[1][2] * matrix[2][0] - matrix[1][0] * matrix[2][2]) / det,
+            (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) / det,
+            (matrix[0][2] * matrix[1][0] - matrix[0][0] * matrix[1][2]) / det,
+        ];
+        result[2] = [
+            (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) / det,
+            (matrix[0][1] * matrix[2][0] - matrix[0][0] * matrix[2][1]) / det,
+            (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) / det,
+        ];
+        return result;
+    }
+
+    // pseudo inverse of nxm matrix
+    function pinv(m) {
+        const mT = transpose(m);
+        const mT_m = multiplyMatrices(mT, m);
+        const mT_m_inv = inverse(mT_m);
+        return multiplyMatrices(mT_m_inv, mT);
+    }
+
     class Bone {
         parent = null;
         child = null;
@@ -89,9 +164,9 @@
             }
         }
 
-        selfTransformMatrix() {
-            const c = Math.cos(this.angle);
-            const s = Math.sin(this.angle);
+        selfTransformMatrix(deltaAngle = 0) {
+            const c = Math.cos(this.angle + deltaAngle);
+            const s = Math.sin(this.angle + deltaAngle);
             const x = this.len * c;
             const y = this.len * s;
 
@@ -105,7 +180,7 @@
         // Get 2d transformation matrix including parents
         // for this joint.
         transformMatrix(deltaAngle = 0) {
-            const matrix = this.selfTransformMatrix();
+            const matrix = this.selfTransformMatrix(deltaAngle);
             const parentMatrix = this.parent ? this.parent.transformMatrix() : [
                 [1, 0, this.x],
                 [0, 1, this.y],
@@ -131,45 +206,87 @@
             return bone;
         }
 
-        endEffectorImpact(deltaAngle = 0.01) {
-            const p0 = this.firstParent().transformMatrix();
-
-
-
-            const p1 = this.transformMatrix(deltaAngle);
-            const p2 = this.transformMatrix(-deltaAngle);
-
-
-        }
-
-        endEffectorPosition() {
-            while (this.parent) {
-                this.x = this.parent.x + Math.cos(this.parent.angle) * this.parent.len;
-                this.y = this.parent.y + Math.sin(this.parent.angle) * this.parent.len;
-            }
-            return [
-                this.x + Math.cos(this.angle) * this.len,
-                this.y + Math.sin(this.angle) * this.len
-            ];
-        }
-
         // inverse kinematics
         // find the impact of each joint on position
         // iterate until we find the correct position
         ik() {
             // Find the impact of each joint on end effector position
-
-
             const matrices = [];
+            const matrics_plus_delta = [];
+            const matrics_minus_delta = [];
+            const derivative_matrix = [];
+
             let bone = this;
 
             while (bone) {
                 matrices.push(bone.transformMatrix());
+                const matrix_plus_delta = bone.transformMatrix(0.01);
+                const matrix_minus_delta = bone.transformMatrix(-0.01);
+                matrics_plus_delta.push(matrix_plus_delta);
+                matrics_minus_delta.push(matrix_minus_delta);
+                derivative_matrix.push(subtractMatrices(matrix_plus_delta, matrix_minus_delta));
                 bone = bone.parent;
             }
 
+            // the derivative matrix is essentially the jacobian
+            const jacobian = derivative_matrix;
+            // find the inverse of the jacobian
+            const jacobian_pinv = jacobian.map(m => pinv(m));
+
             const MAX_IT = 30;
             for (let i = 0; i < MAX_IT; i++) {
+                const epsilon = 0.01;
+                const endEffectorMatrix = this.lastChild().transformMatrix();
+                const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
+                const error = subtractVector(endEffectorPosition, this.target);
+
+                // draw error
+                ctx.beginPath();
+                ctx.moveTo(this.target[0], this.target[1]);
+                ctx.lineTo(this.target[0] + error[0], this.target[1] + error[1]);
+                ctx.strokeStyle = 'red';
+                ctx.stroke();
+
+
+                const deltaTheta = jacobian_pinv.map((matrix) => {
+                    // Each matrix is a 3x3 pseudo-inverse matrix
+                    return matrix.map((row, rowIdx) => {
+                        // Compute the dot product of the row with the error vector
+                        return row.reduce((sum, value, colIdx) => {
+                            if (colIdx > 1) return sum;
+                            const result = sum + value * error[colIdx] * epsilon;
+                            if (isNaN(result)) {
+                                debugger; // Pause for debugging
+                            }
+                            return result;
+                        }, 0);
+                    });
+                });
+
+                // Update joint angles
+                let jointAngles = [];
+
+                let bone = this;
+                while (bone) {
+                    jointAngles.push(bone.angle);
+                    bone = bone.parent;
+                }
+
+                jointAngles.reverse();
+
+                jointAngles = jointAngles.map((angle, idx) => {
+                    const adjustment = deltaTheta[idx].reduce((sum, value) => sum + value, 0);
+                    return angle + adjustment * 0.01;
+                });
+
+                // Set the new joint angles
+                bone = this;
+                jointAngles.reverse();
+                while (bone) {
+                    bone.angle = jointAngles.pop() % (2 * Math.PI);
+                    bone = bone.parent;
+                }
+
             }
         }
 
@@ -235,6 +352,12 @@
 
         bones.forEach(b => b.update());
         bones.forEach(b => b.draw());
+
+        // draw target
+        ctx.beginPath();
+        ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'green';
+        ctx.fill();
 
         requestAnimationFrame(draw);
     }
