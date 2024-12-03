@@ -48,100 +48,13 @@
 
     const bones = [];
 
-    // Multiply two 3x3 matrices
-    function multiplyMatrices(a, b) {
-        const result = [];
-        for (let i = 0; i < 3; i++) {
-            result[i] = [];
-            for (let j = 0; j < 3; j++) {
-                result[i][j] = 0;
-                for (let k = 0; k < 3; k++) {
-                    result[i][j] += a[i][k] * b[k][j];
-                }
-            }
-        }
-        return result;
-    }
-
-    function subtractMatrices(a, b) {
-        const result = [];
-        for (let i = 0; i < 3; i++) {
-            result[i] = [];
-            for (let j = 0; j < 3; j++) {
-                result[i][j] = a[i][j] - b[i][j];
-            }
-        }
-        return result;
-    }
-
-    function subtractVector(a, b) {
-        return [a[0] - b[0], a[1] - b[1]];
-    }
-
-    function transpose(matrix) {
-        const result = [];
-        for (let i = 0; i < 3; i++) {
-            result[i] = [];
-            for (let j = 0; j < 3; j++) {
-                result[i][j] = matrix[j][i];
-            }
-        }
-        return result;
-    }
-
-    // Determinant of a 3x3 matrix
-    function determinant(matrix) {
-        return (
-            matrix[0][0] * (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) -
-            matrix[0][1] * (matrix[1][0] * matrix[2][2] - matrix[1][2] * matrix[2][0]) +
-            matrix[0][2] * (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0])
-        );
-    }
-
-    // Inverse of a 3x3 matrix
-    function inverse(matrix) {
-        const det = determinant(matrix);
-        if (det === 0) {
-            console.error("Matrix is singular and cannot be inverted.");
-            // return identity matrix
-            return [
-                [1, 0, 0],
-                [0, 1, 0],
-                [0, 0, 1]
-            ];
-        }
-        const result = [];
-        result[0] = [
-            (matrix[1][1] * matrix[2][2] - matrix[1][2] * matrix[2][1]) / det,
-            (matrix[0][2] * matrix[2][1] - matrix[0][1] * matrix[2][2]) / det,
-            (matrix[0][1] * matrix[1][2] - matrix[0][2] * matrix[1][1]) / det,
-        ];
-        result[1] = [
-            (matrix[1][2] * matrix[2][0] - matrix[1][0] * matrix[2][2]) / det,
-            (matrix[0][0] * matrix[2][2] - matrix[0][2] * matrix[2][0]) / det,
-            (matrix[0][2] * matrix[1][0] - matrix[0][0] * matrix[1][2]) / det,
-        ];
-        result[2] = [
-            (matrix[1][0] * matrix[2][1] - matrix[1][1] * matrix[2][0]) / det,
-            (matrix[0][1] * matrix[2][0] - matrix[0][0] * matrix[2][1]) / det,
-            (matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0]) / det,
-        ];
-        return result;
-    }
-
-    // pseudo inverse of nxm matrix
-    function pinv(m) {
-        const mT = transpose(m);
-        const mT_m = multiplyMatrices(mT, m);
-        const mT_m_inv = inverse(mT_m);
-        return multiplyMatrices(mT_m_inv, mT);
+    function pinv(matrix) {
+        return math.pinv(matrix); // Math.js pseudo-inverse
     }
 
     class Bone {
         parent = null;
         child = null;
-        // Position is relative to parent (if any)
-        // So x and y are only for the first bone in the chain
         x = canvas.width / 2;
         y = canvas.height / 2;
         len = 100;
@@ -177,96 +90,59 @@
             ];
         }
 
-        // Get 2d transformation matrix including parents
-        // for this joint.
         transformMatrix(deltaAngle = 0) {
             const matrix = this.selfTransformMatrix(deltaAngle);
-            const parentMatrix = this.parent ? this.parent.transformMatrix() : [
-                [1, 0, this.x],
-                [0, 1, this.y],
-                [0, 0, 1]
-            ];
-
-            return multiplyMatrices(parentMatrix, matrix);
+            const parentMatrix = this.parent
+                ? this.parent.transformMatrix()
+                : [[1, 0, this.x], [0, 1, this.y], [0, 0, 1]];
+            return math.multiply(parentMatrix, matrix);
         }
 
-        firstParent() {
-            let bone = this;
-            while (bone.parent) {
-                bone = bone.parent;
-            }
-            return bone;
-        }
-
-        lastChild() {
-            let bone = this;
-            while (bone.child) {
-                bone = bone.child;
-            }
-            return bone;
-        }
-
-        // inverse kinematics
-        // find the impact of each joint on position
-        // iterate until we find the correct position
         ik() {
-            // Find the impact of each joint on end effector position
             const matrices = [];
-            const matrics_plus_delta = [];
-            const matrics_minus_delta = [];
-            const derivative_matrix = [];
+            const matricesPlusDelta = [];
+            const matricesMinusDelta = [];
+            const derivativeMatrix = [];
 
             let bone = this;
 
             while (bone) {
                 matrices.push(bone.transformMatrix());
-                const matrix_plus_delta = bone.transformMatrix(0.01);
-                const matrix_minus_delta = bone.transformMatrix(-0.01);
-                matrics_plus_delta.push(matrix_plus_delta);
-                matrics_minus_delta.push(matrix_minus_delta);
-                derivative_matrix.push(subtractMatrices(matrix_plus_delta, matrix_minus_delta));
+                const matrixPlusDelta = bone.transformMatrix(0.01);
+                const matrixMinusDelta = bone.transformMatrix(-0.01);
+                matricesPlusDelta.push(matrixPlusDelta);
+                matricesMinusDelta.push(matrixMinusDelta);
+                derivativeMatrix.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
                 bone = bone.parent;
             }
 
-            // the derivative matrix is essentially the jacobian
-            const jacobian = derivative_matrix;
-            // find the inverse of the jacobian
-            const jacobian_pinv = jacobian.map(m => pinv(m));
+            const jacobian = derivativeMatrix;
+            const jacobianPinv = jacobian.map(m => pinv(m));
 
             const MAX_IT = 30;
             for (let i = 0; i < MAX_IT; i++) {
                 const epsilon = 0.01;
                 const endEffectorMatrix = this.lastChild().transformMatrix();
                 const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
-                const error = subtractVector(endEffectorPosition, this.target);
+                const error = math.subtract(this.target, endEffectorPosition);
 
-                // draw error
                 ctx.beginPath();
                 ctx.moveTo(this.target[0], this.target[1]);
                 ctx.lineTo(this.target[0] + error[0], this.target[1] + error[1]);
                 ctx.strokeStyle = 'red';
                 ctx.stroke();
 
-
-                const deltaTheta = jacobian_pinv.map((matrix) => {
-                    // Each matrix is a 3x3 pseudo-inverse matrix
+                const deltaTheta = jacobianPinv.map(matrix => {
                     return matrix.map((row, rowIdx) => {
-                        // Compute the dot product of the row with the error vector
                         return row.reduce((sum, value, colIdx) => {
                             if (colIdx > 1) return sum;
-                            const result = sum + value * error[colIdx] * epsilon;
-                            if (isNaN(result)) {
-                                debugger; // Pause for debugging
-                            }
-                            return result;
+                            return sum + value * error[colIdx] * epsilon;
                         }, 0);
                     });
                 });
 
-                // Update joint angles
                 let jointAngles = [];
-
-                let bone = this;
+                bone = this;
                 while (bone) {
                     jointAngles.push(bone.angle);
                     bone = bone.parent;
@@ -279,14 +155,12 @@
                     return angle + adjustment * 0.01;
                 });
 
-                // Set the new joint angles
                 bone = this;
                 jointAngles.reverse();
                 while (bone) {
                     bone.angle = jointAngles.pop() % (2 * Math.PI);
                     bone = bone.parent;
                 }
-
             }
         }
 
@@ -296,11 +170,7 @@
 
         drawFromMatrices() {
             ctx.beginPath();
-            const parentTransform = this.parent ? this.parent.transformMatrix() : [
-                [1, 0, this.x],
-                [0, 1, this.y],
-                [0, 0, 1]
-            ];
+            const parentTransform = this.parent ? this.parent.transformMatrix() : [[1, 0, this.x], [0, 1, this.y], [0, 0, 1]];
             const matrix = this.transformMatrix();
             const x1 = parentTransform[0][2];
             const y1 = parentTransform[1][2];
@@ -312,13 +182,11 @@
             ctx.strokeStyle = 'white';
             ctx.stroke();
 
-            // draw point 1
             ctx.beginPath();
             ctx.arc(x1, y1, 5, 0, Math.PI * 2);
             ctx.fillStyle = 'red';
             ctx.fill();
 
-            // draw point 2
             ctx.beginPath();
             ctx.arc(x2, y2, 5, 0, Math.PI * 2);
             ctx.fillStyle = 'blue';
@@ -328,24 +196,24 @@
         draw() {
             this.drawFromMatrices();
         }
+
+        lastChild() {
+            let bone = this;
+            while (bone.child) {
+                bone = bone.child;
+            }
+            return bone;
+        }
     }
 
     const b1 = new Bone();
     const b2 = new Bone();
     b2.setParent(b1);
 
-    // Example of a basic animation loop
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Simple circle animation
-        const time = Date.now() / 1000; // Seconds
-        const radius = 50;
-        const x = canvas.width / 2 + Math.sin(time) * 100;
-        const y = canvas.height / 2 + Math.cos(time) * 100;
 
         b2.target = mouse;
         b2.ik();
@@ -353,7 +221,6 @@
         bones.forEach(b => b.update());
         bones.forEach(b => b.draw());
 
-        // draw target
         ctx.beginPath();
         ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
         ctx.fillStyle = 'green';
@@ -362,7 +229,7 @@
         requestAnimationFrame(draw);
     }
 
-    draw(); // Start the animation loop
+    draw();
   </script>
 </body>
 </html>
