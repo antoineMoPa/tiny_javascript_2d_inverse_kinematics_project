@@ -99,28 +99,28 @@
         }
 
         ik() {
-            const matrices = [];
-            const matricesPlusDelta = [];
-            const matricesMinusDelta = [];
-            const derivativeMatrix = [];
-
-            let bone = this;
-
-            while (bone) {
-                matrices.push(bone.transformMatrix());
-                const matrixPlusDelta = bone.transformMatrix(0.01);
-                const matrixMinusDelta = bone.transformMatrix(-0.01);
-                matricesPlusDelta.push(matrixPlusDelta);
-                matricesMinusDelta.push(matrixMinusDelta);
-                derivativeMatrix.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
-                bone = bone.parent;
-            }
-
-            const jacobian = derivativeMatrix;
-            const jacobianPinv = jacobian.map(m => pinv(m));
-
-            const MAX_IT = 30;
+            const MAX_IT = 60;
             for (let i = 0; i < MAX_IT; i++) {
+                const matrices = [];
+                const matricesPlusDelta = [];
+                const matricesMinusDelta = [];
+                const derivativeMatrix = [];
+
+                let bone = this;
+
+                while (bone) {
+                    matrices.push(bone.transformMatrix());
+                    const matrixPlusDelta = bone.transformMatrix(0.1);
+                    const matrixMinusDelta = bone.transformMatrix(-0.1);
+                    matricesPlusDelta.push(matrixPlusDelta);
+                    matricesMinusDelta.push(matrixMinusDelta);
+                    derivativeMatrix.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
+                    bone = bone.parent;
+                }
+
+                const jacobian = derivativeMatrix;
+                const jacobianPinv = jacobian.map(m => pinv(m));
+
                 const epsilon = 0.01;
                 const endEffectorMatrix = this.lastChild().transformMatrix();
                 const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
@@ -148,11 +148,9 @@
                     bone = bone.parent;
                 }
 
-                jointAngles.reverse();
-
                 jointAngles = jointAngles.map((angle, idx) => {
                     const adjustment = deltaTheta[idx].reduce((sum, value) => sum + value, 0);
-                    return angle + adjustment * 0.01;
+                    return angle + adjustment * 0.1;
                 });
 
                 bone = this;
@@ -160,6 +158,10 @@
                 while (bone) {
                     bone.angle = jointAngles.pop() % (2 * Math.PI);
                     bone = bone.parent;
+                }
+
+                if (math.norm(error) < 2) {
+                    break;
                 }
             }
         }
