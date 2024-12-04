@@ -59,7 +59,6 @@
         y = canvas.height / 2;
         len = 100;
         angle = 0.4 * Math.PI;
-        target = null;
 
         constructor() {
             bones.push(this);
@@ -98,7 +97,7 @@
             return math.multiply(parentMatrix, matrix);
         }
 
-        ik() {
+        ik(target) {
             const MAX_IT = 20;
             for (let i = 0; i < MAX_IT; i++) {
                 const matrices = [];
@@ -124,7 +123,7 @@
                 const endEffectorMatrix = this.lastChild().transformMatrix();
                 const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
 
-                const error = math.subtract(this.target, endEffectorPosition);
+                const error = math.subtract(target, endEffectorPosition);
                 if (math.norm(error) < 2) {
                     break;
                 }
@@ -208,16 +207,17 @@
 
    const b1 = new Bone();
    b1.y = 100;
+   const b2 = new Bone();
+
+   b2.setParent(b1);
 
 
-   let lastBone = b1;
+   const b3 = new Bone();
+   b3.x += 100;
+   b3.y = 100;
+   const b4 = new Bone();
+   b4.setParent(b3);
 
-   for (let i = 0; i < 30; i++) {
-       const bone = new Bone();
-       bone.len = 30;
-       bone.setParent(lastBone);
-       lastBone = bone;
-   }
 
    function draw() {
        ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -225,8 +225,9 @@
        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
        const lastBone = bones[bones.length - 1];
-       lastBone.target = mouse;
-       lastBone.ik();
+
+       b4.ik(mouse);
+       b2.ik(mouse);
 
        bones.forEach(b => b.update());
        bones.forEach(b => b.draw());
