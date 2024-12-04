@@ -120,8 +120,7 @@
 
                 const jacobian = derivativeMatrix;
                 const jacobianPinv = jacobian.map(m => pinv(m));
-
-                const epsilon = 0.01;
+                const epsilon = 0.0001;
                 const endEffectorMatrix = this.lastChild().transformMatrix();
                 const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
                 const error = math.subtract(this.target, endEffectorPosition);
@@ -136,7 +135,7 @@
                     return matrix.map((row, rowIdx) => {
                         return row.reduce((sum, value, colIdx) => {
                             if (colIdx > 1) return sum;
-                            return sum + value * error[colIdx] * epsilon;
+                            return sum + value * error[colIdx];
                         }, 0);
                     });
                 });
@@ -150,7 +149,7 @@
 
                 jointAngles = jointAngles.map((angle, idx) => {
                     const adjustment = deltaTheta[idx].reduce((sum, value) => sum + value, 0);
-                    return angle + adjustment * 0.1;
+                    return angle + adjustment * epsilon * Math.min(math.norm(error), 1);
                 });
 
                 bone = this;
@@ -208,30 +207,43 @@
         }
     }
 
-    const b1 = new Bone();
-    const b2 = new Bone();
-    b2.setParent(b1);
+   const b1 = new Bone();
+   b1.y = 100;
 
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        b2.target = mouse;
-        b2.ik();
+   const b2 = new Bone();
+   const b3 = new Bone();
+   const b4 = new Bone();
+   const b5 = new Bone();
 
-        bones.forEach(b => b.update());
-        bones.forEach(b => b.draw());
+   b2.setParent(b1);
+   b3.setParent(b2);
+   b4.setParent(b3);
+   b5.setParent(b2);
 
-        ctx.beginPath();
-        ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
-        ctx.fillStyle = 'green';
-        ctx.fill();
+   function draw() {
+       ctx.clearRect(0, 0, canvas.width, canvas.height);
+       ctx.fillStyle = 'black';
+       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        requestAnimationFrame(draw);
-    }
+       const lastBone = bones[bones.length - 1];
+       lastBone.target = mouse;
+       lastBone.ik();
+       b4.target = mouse;
+       b4.ik();
 
-    draw();
+       bones.forEach(b => b.update());
+       bones.forEach(b => b.draw());
+
+       ctx.beginPath();
+       ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
+       ctx.fillStyle = 'green';
+       ctx.fill();
+
+       requestAnimationFrame(draw);
+   }
+
+   draw();
   </script>
 </body>
 </html>
