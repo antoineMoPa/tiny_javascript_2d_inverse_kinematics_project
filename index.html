@@ -99,7 +99,7 @@
         }
 
         ik() {
-            const MAX_IT = 60;
+            const MAX_IT = 20;
             for (let i = 0; i < MAX_IT; i++) {
                 const matrices = [];
                 const matricesPlusDelta = [];
@@ -123,13 +123,11 @@
                 const epsilon = 0.0001;
                 const endEffectorMatrix = this.lastChild().transformMatrix();
                 const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
-                const error = math.subtract(this.target, endEffectorPosition);
 
-                ctx.beginPath();
-                ctx.moveTo(this.target[0], this.target[1]);
-                ctx.lineTo(this.target[0] + error[0], this.target[1] + error[1]);
-                ctx.strokeStyle = 'red';
-                ctx.stroke();
+                const error = math.subtract(this.target, endEffectorPosition);
+                if (math.norm(error) < 2) {
+                    break;
+                }
 
                 const deltaTheta = jacobianPinv.map(matrix => {
                     return matrix.map((row, rowIdx) => {
@@ -154,6 +152,7 @@
 
                 bone = this;
                 jointAngles.reverse();
+
                 while (bone) {
                     bone.angle = jointAngles.pop() % (2 * Math.PI);
                     bone = bone.parent;
@@ -211,15 +210,14 @@
    b1.y = 100;
 
 
-   const b2 = new Bone();
-   const b3 = new Bone();
-   const b4 = new Bone();
-   const b5 = new Bone();
+   let lastBone = b1;
 
-   b2.setParent(b1);
-   b3.setParent(b2);
-   b4.setParent(b3);
-   b5.setParent(b2);
+   for (let i = 0; i < 30; i++) {
+       const bone = new Bone();
+       bone.len = 30;
+       bone.setParent(lastBone);
+       lastBone = bone;
+   }
 
    function draw() {
        ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -229,8 +227,6 @@
        const lastBone = bones[bones.length - 1];
        lastBone.target = mouse;
        lastBone.ik();
-       b4.target = mouse;
-       b4.ik();
 
        bones.forEach(b => b.update());
        bones.forEach(b => b.draw());
