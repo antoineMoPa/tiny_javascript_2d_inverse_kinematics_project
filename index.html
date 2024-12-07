@@ -235,7 +235,7 @@
    const body = new Bone();
    body.angle = 0;
    body.x = window.innerWidth / 2;
-   body.y = 200;
+   body.y = 300;
    body.len = 200;
    body.noIk = true;
 
@@ -282,12 +282,44 @@
        ctx.fillStyle = 'black';
        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-       const lastBone = bones[bones.length - 1];
+       const target = mouse;
+       const legBaseTarget = [body.x, body.y + 150];
 
-       frontLeg1Foot.ik(mouse);
-       frontLeg2Foot.ik(math.add(mouse, [10, 0]));
-       backLeg1Foot.ik(math.add(mouse, [body.len, 0]));
-       backLeg2Foot.ik(math.add(mouse, [body.len + 10, 0]));
+       const lastBone = bones[bones.length - 1];
+       let frontLeg1Target = math.add(legBaseTarget, [0, 0]);
+       let frontLeg2Target = math.add(legBaseTarget, [10, 0]);
+       let backLeg1Target = math.add(legBaseTarget, [body.len, 0]);
+       let backLeg2Target = math.add(legBaseTarget, [body.len + 10, 0]);
+
+       // Move body closer to target on x axis
+       const deltaX = target[0] - body.x;
+
+       const shouldMove = Math.abs(deltaX) > 1;
+
+       const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
+       body.x += clampedDeltaX;
+
+       if (shouldMove) {
+           // Some oscillation
+           frontLeg1Target[0] += Math.cos(-performance.now() / 200) * 30;
+           frontLeg1Target[1] += Math.sin(-performance.now() / 200) * 30;
+           frontLeg2Target[0] += Math.cos(-performance.now() / 200 + Math.PI) * 30;
+           frontLeg2Target[1] += Math.sin(-performance.now() / 200 + Math.PI) * 30;
+
+
+           backLeg1Target[0] += Math.cos(-performance.now() / 200) * 30;
+           backLeg1Target[1] += Math.sin(-performance.now() / 200) * 30;
+           backLeg2Target[0] += Math.cos(-performance.now() / 200 + Math.PI) * 30;
+           backLeg2Target[1] += Math.sin(-performance.now() / 200 + Math.PI) * 30;
+
+           // Some oscilation for head angle
+           head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 200) * 0.1;
+       }
+
+       frontLeg1Foot.ik(frontLeg1Target);
+       frontLeg2Foot.ik(frontLeg2Target);
+       backLeg1Foot.ik(backLeg1Target);
+       backLeg2Foot.ik(backLeg2Target);
 
        bones.forEach(b => b.update());
        bones.forEach(b => b.draw());
