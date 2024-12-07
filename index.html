@@ -55,8 +55,8 @@
    class Bone {
        parent = null;
        child = null;
-       x = canvas.width / 2;
-       y = canvas.height / 2;
+       x = 0;
+       y = 0;
        len = 100;
        angle = 0.4 * Math.PI;
 
@@ -70,10 +70,6 @@
        }
 
        applyConstraints() {
-           if (this.parent) {
-               this.x = this.parent.x + Math.cos(this.parent.angle) * this.parent.len;
-               this.y = this.parent.y + Math.sin(this.parent.angle) * this.parent.len;
-           }
        }
 
        selfTransformMatrix(deltaAngle = 0) {
@@ -83,22 +79,49 @@
            const y = this.len * s;
 
            return [
-               [c, -s, x],
-               [s, c, y],
+                [c, -s, x],
+                [s, c, y],
+                [0, 0, 1]
+           ];
+       }
+
+       parentMatrix(deltaAngle = 0) {
+           if (this.parent) {
+               return this.parent.transformMatrix(deltaAngle);
+           }
+           else {
+               return [
+                   [1, 0, 0],
+                   [0, 1, 0],
+                   [0, 0, 1]
+               ];
+           }
+       }
+
+       offsetMatrix() {
+           return [
+               [1, 0, this.x],
+               [0, 1, this.y],
                [0, 0, 1]
            ];
        }
 
-       transformMatrix(deltaAngle = 0) {
-           const matrix = this.selfTransformMatrix(deltaAngle);
-           const parentMatrix = this.parent
-                              ? this.parent.transformMatrix()
-                              : [[1, 0, this.x], [0, 1, this.y], [0, 0, 1]];
+       globalOffsetMatrix() {
+           let parentMatrix = this.parentMatrix();
+           let matrix = this.offsetMatrix();
+
            return math.multiply(parentMatrix, matrix);
        }
 
+       transformMatrix(deltaAngle = 0) {
+           // todo: offset is not working
+           const T = this.selfTransformMatrix(deltaAngle);
+
+           return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T);
+       }
+
        ik(target) {
-           const MAX_IT = 20;
+           const MAX_IT = 40;
            for (let i = 0; i < MAX_IT; i++) {
                const matrices = [];
                const matricesPlusDelta = [];
@@ -119,7 +142,8 @@
 
                const jacobian = derivativeMatrix;
                const jacobianPinv = jacobian.map(m => pinv(m));
-               const epsilon = 0.0001;
+               const normalizedJacobianPinv = math.multiply(jacobianPinv, 1 / math.norm(jacobianPinv));
+               const epsilon = 0.001;
                const endEffectorMatrix = this.lastChild().transformMatrix();
                const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
 
@@ -153,7 +177,8 @@
                jointAngles.reverse();
 
                while (bone) {
-                   bone.angle = jointAngles.pop() % (2 * Math.PI);
+                   if (!bone.noIk)
+                       bone.angle = jointAngles.pop() % (2 * Math.PI);
                    bone = bone.parent;
                }
 
@@ -169,10 +194,12 @@
 
        drawFromMatrices() {
            ctx.beginPath();
-           const parentTransform = this.parent ? this.parent.transformMatrix() : [[1, 0, this.x], [0, 1, this.y], [0, 0, 1]];
+           const parentMatrix = this.parentMatrix();
            const matrix = this.transformMatrix();
-           const x1 = parentTransform[0][2];
-           const y1 = parentTransform[1][2];
+           const globalOffsetMatrix = this.globalOffsetMatrix();
+
+           const x1 = globalOffsetMatrix[0][2];
+           const y1 = globalOffsetMatrix[1][2];
            const x2 = matrix[0][2];
            const y2 = matrix[1][2];
 
@@ -205,21 +232,50 @@
        }
    }
 
+   const body = new Bone();
+   body.angle = 0;
+   body.x = window.innerWidth / 2;
+   body.y = 200;
+   body.len = 200;
+   body.noIk = true;
+
+   const backLeg1 = new Bone();
+   backLeg1.setParent(body);
+   backLeg1.x = 0;
+   backLeg1.y = 0;
+   const backLeg1Foot = new Bone();
+
+   backLeg1Foot.setParent(backLeg1);
 
 
-   const b1 = new Bone();
-   b1.y = 100;
-   const b2 = new Bone();
+   const backLeg2 = new Bone();
+   backLeg2.setParent(body);
+   backLeg2.x = 0;
+   backLeg2.y = 0;
+   const backLeg2Foot = new Bone();
+   backLeg2Foot.setParent(backLeg2);
 
-   b2.setParent(b1);
 
+   const frontLeg1 = new Bone();
+   frontLeg1.setParent(body);
+   frontLeg1.x = -body.len;
+   frontLeg1.y = 0;
+   const frontLeg1Foot = new Bone();
+   frontLeg1Foot.setParent(frontLeg1);
 
-   const b3 = new Bone();
-   b3.x += 100;
-   b3.y = 100;
-   const b4 = new Bone();
-   b4.setParent(b3);
+   const frontLeg2 = new Bone();
+   frontLeg2.setParent(body);
+   frontLeg2.x = -body.len;
+   frontLeg2.y = 0;
+   const frontLeg2Foot = new Bone();
+   frontLeg2Foot.setParent(frontLeg2);
 
+   const head = new Bone();
+   head.setParent(body);
+   head.x = -body.len;
+   head.y = 0;
+   head.len = 80;
+   head.angle = -1.5 * Math.PI / 2;
 
    function draw() {
        ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -228,8 +284,10 @@
 
        const lastBone = bones[bones.length - 1];
 
-       b4.ik(mouse);
-       b2.ik(mouse);
+       frontLeg1Foot.ik(mouse);
+       frontLeg2Foot.ik(math.add(mouse, [10, 0]));
+       backLeg1Foot.ik(math.add(mouse, [body.len, 0]));
+       backLeg2Foot.ik(math.add(mouse, [body.len + 10, 0]));
 
        bones.forEach(b => b.update());
        bones.forEach(b => b.draw());
