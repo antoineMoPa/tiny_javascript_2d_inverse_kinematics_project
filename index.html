@@ -72,7 +72,7 @@
        applyConstraints() {
        }
 
-       effectorMatrix(deltaAngle = 0) {
+       localEffectorMatrix(deltaAngle = 0) {
            const c = Math.cos(this.angle + deltaAngle);
            const s = Math.sin(this.angle + deltaAngle);
            const x = this.len * c;
@@ -108,15 +108,69 @@
 
        transformMatrix(deltaAngle = 0) {
            // todo: offset is not working
-           const T = this.effectorMatrix(deltaAngle);
+           const T = this.localEffectorMatrix(deltaAngle);
 
+           return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T);
+       }
+
+       startPointMatrix(deltaAngle = 0) {
+           const rootParent = this.rootParent();
+           const T1 = [
+               [1, 0, -rootParent.x],
+               [0, 1, -rootParent.y],
+               [0, 0, 1]
+           ];
+           const T2 = [
+               [1, 0, rootParent.x],
+               [0, 1, rootParent.y],
+               [0, 0, 1]
+           ];
            const S = [
-               [1, 0, 0],
+               [rootParent.flipX? -1 : 1, 0, 0],
                [0, 1, 0],
-               [0, 0, 1],
+               [0, 0, 1]
            ];
 
-           return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T, S);
+           let m = math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle));
+           m = math.multiply(T1, m);
+           m = math.multiply(S, m);
+           m = math.multiply(T2, m);
+
+           return m;
+       }
+
+       endEffectorMatrix(deltaAngle = 0) {
+           const rootParent = this.rootParent();
+           const T1 = [
+               [1, 0, -rootParent.x],
+               [0, 1, -rootParent.y],
+               [0, 0, 1]
+           ];
+           const T2 = [
+               [1, 0, rootParent.x],
+               [0, 1, rootParent.y],
+               [0, 0, 1]
+           ];
+           const S = [
+               [rootParent.flipX? -1 : 1, 0, 0],
+               [0, 1, 0],
+               [0, 0, 1]
+           ];
+
+           let m = this.transformMatrix(deltaAngle);
+           m = math.multiply(T1, m);
+           m = math.multiply(S, m);
+           m = math.multiply(T2, m);
+
+           return m;
+       }
+
+       rootParent() {
+           let bone = this;
+           while (bone.parent) {
+               bone = bone.parent;
+           }
+           return bone;
        }
 
        ik(target) {
@@ -130,9 +184,9 @@
                let bone = this;
 
                while (bone) {
-                   matrices.push(bone.transformMatrix());
-                   const matrixPlusDelta = bone.transformMatrix(0.1);
-                   const matrixMinusDelta = bone.transformMatrix(-0.1);
+                   matrices.push(bone.endEffectorMatrix());
+                   const matrixPlusDelta = bone.endEffectorMatrix(0.1);
+                   const matrixMinusDelta = bone.endEffectorMatrix(-0.1);
                    matricesPlusDelta.push(matrixPlusDelta);
                    matricesMinusDelta.push(matrixMinusDelta);
                    derivativeMatrix.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
@@ -143,7 +197,7 @@
                const jacobianPinv = jacobian.map(m => pinv(m));
                const normalizedJacobianPinv = math.multiply(jacobianPinv, 1 / math.norm(jacobianPinv));
                const epsilon = 0.001;
-               const endEffectorMatrix = this.lastChild().transformMatrix();
+               const endEffectorMatrix = this.lastChild().endEffectorMatrix();
                const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
 
                const error = math.subtract(target, endEffectorPosition);
@@ -193,14 +247,13 @@
 
        drawFromMatrices() {
            ctx.beginPath();
-           const parentMatrix = this.parentMatrix();
-           const matrix = this.transformMatrix();
-           const globalOffsetMatrix = math.multiply(this.parentMatrix(), this.offsetMatrix());
+           const startMatrix = this.startPointMatrix();
+           const endMatrix = this.endEffectorMatrix();
 
-           const x1 = globalOffsetMatrix[0][2];
-           const y1 = globalOffsetMatrix[1][2];
-           const x2 = matrix[0][2];
-           const y2 = matrix[1][2];
+           const x1 = startMatrix[0][2];
+           const y1 = startMatrix[1][2];
+           const x2 = endMatrix[0][2];
+           const y2 = endMatrix[1][2];
 
            ctx.moveTo(x1, y1);
            ctx.lineTo(x2, y2);
@@ -237,6 +290,7 @@
    body.y = 300;
    body.len = 200;
    body.noIk = true;
+   body.flipX = false;
 
    const backLeg1 = new Bone();
    backLeg1.setParent(body);
@@ -282,47 +336,58 @@
        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
        const target = mouse;
-       const legBaseTarget = [body.x, body.y + 150];
+       const bodyStartMatrix = body.startPointMatrix();
+       const bodyEndMatrix = body.endEffectorMatrix();
+       const frontLegBaseTarget = [bodyStartMatrix[0][2], bodyStartMatrix[1][2] + 150];
+       const backLegBaseTarget = [bodyEndMatrix[0][2], bodyEndMatrix[1][2] + 150];
 
-       const lastBone = bones[bones.length - 1];
-       let frontLeg1Target = math.add(legBaseTarget, [0, 0]);
-       let frontLeg2Target = math.add(legBaseTarget, [10, 0]);
-       let backLeg1Target = math.add(legBaseTarget, [body.len, 0]);
-       let backLeg2Target = math.add(legBaseTarget, [body.len + 10, 0]);
+       let frontLeg1Target = frontLegBaseTarget;
+       let frontLeg2Target = math.add(frontLegBaseTarget, [10, 0]);
+       let backLeg1Target = backLegBaseTarget;
+       let backLeg2Target = math.add(backLegBaseTarget, [10, 0]);
 
        // Move body closer to target on x axis
        const deltaX = target[0] - body.x;
 
-       const shouldMove = Math.abs(deltaX) > 1;
+       body.flipX = deltaX > 0;
+
+       const shouldMove = Math.abs(deltaX) > 15;
 
        const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
-       body.x += clampedDeltaX;
+
+       if (shouldMove) {
+           body.x += clampedDeltaX;
+       }
 
        if (shouldMove) {
            // Some oscillation
-           frontLeg1Target[0] += Math.cos(-performance.now() / 200) * 30;
-           frontLeg1Target[1] += Math.sin(-performance.now() / 200) * 30;
-           frontLeg2Target[0] += Math.cos(-performance.now() / 200 + Math.PI) * 30;
-           frontLeg2Target[1] += Math.sin(-performance.now() / 200 + Math.PI) * 30;
+           const d = -Math.sign(deltaX); // direction
+           frontLeg1Target[0] += Math.cos(-performance.now() / 200 * d) * 30;
+           frontLeg1Target[1] += Math.sin(-performance.now() / 200 * d) * 30;
+           frontLeg2Target[0] += Math.cos(-performance.now() / 200 * d+ Math.PI) * 30;
+           frontLeg2Target[1] += Math.sin(-performance.now() / 200 * d+ Math.PI) * 30;
 
 
-           backLeg1Target[0] += Math.cos(-performance.now() / 200) * 30;
-           backLeg1Target[1] += Math.sin(-performance.now() / 200) * 30;
-           backLeg2Target[0] += Math.cos(-performance.now() / 200 + Math.PI) * 30;
-           backLeg2Target[1] += Math.sin(-performance.now() / 200 + Math.PI) * 30;
+           backLeg1Target[0] += Math.cos(-performance.now() / 200 * d) * 30;
+           backLeg1Target[1] += Math.sin(-performance.now() / 200 * d) * 30;
+           backLeg2Target[0] += Math.cos(-performance.now() / 200 * d + Math.PI) * 30;
+           backLeg2Target[1] += Math.sin(-performance.now() / 200 * d + Math.PI) * 30;
 
-           // Some oscilation for head angle
-           head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 200) * 0.1;
        }
 
        try {
-           frontLeg1Foot.ik(frontLeg1Target);
-           frontLeg2Foot.ik(frontLeg2Target);
-           backLeg1Foot.ik(backLeg1Target);
-           backLeg2Foot.ik(backLeg2Target);
+           if (shouldMove) {
+               frontLeg1Foot.ik(frontLeg1Target);
+               frontLeg2Foot.ik(frontLeg2Target);
+               backLeg1Foot.ik(backLeg1Target);
+               backLeg2Foot.ik(backLeg2Target);
+           }
        } catch (e) {
            console.error(e);
        }
+
+       // Some oscilation for head angle
+       head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 200) * 0.1;
 
        bones.forEach(b => b.update());
        bones.forEach(b => b.draw());
