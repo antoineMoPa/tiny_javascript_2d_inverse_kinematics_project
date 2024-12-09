@@ -110,7 +110,13 @@
            // todo: offset is not working
            const T = this.effectorMatrix(deltaAngle);
 
-           return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T);
+           const S = [
+               [1, 0, 0],
+               [0, 1, 0],
+               [0, 0, 1],
+           ];
+
+           return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T, S);
        }
 
        ik(target) {
@@ -309,10 +315,14 @@
            head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 200) * 0.1;
        }
 
-       frontLeg1Foot.ik(frontLeg1Target);
-       frontLeg2Foot.ik(frontLeg2Target);
-       backLeg1Foot.ik(backLeg1Target);
-       backLeg2Foot.ik(backLeg2Target);
+       try {
+           frontLeg1Foot.ik(frontLeg1Target);
+           frontLeg2Foot.ik(frontLeg2Target);
+           backLeg1Foot.ik(backLeg1Target);
+           backLeg2Foot.ik(backLeg2Target);
+       } catch (e) {
+           console.error(e);
+       }
 
        bones.forEach(b => b.update());
        bones.forEach(b => b.draw());
