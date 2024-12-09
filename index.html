@@ -182,7 +182,7 @@
        }
 
        ik(target) {
-           const MAX_IT = 40;
+           const MAX_IT = 20;
            for (let i = 0; i < MAX_IT; i++) {
                const matrices = [];
                const matricesPlusDelta = [];
@@ -291,15 +291,24 @@
    }
 
    const body = new Bone();
-   body.angle = 0;
+   body.angle = 0.0;
    body.x = window.innerWidth / 2;
    body.y = 300;
-   body.len = 200;
+   body.len = 100;
    body.noIk = true;
    body.flipX = false;
 
+   const backBody = new Bone();
+   backBody.setParent(body);
+   backBody.angle = 0.1;
+   backBody.x = 0;
+   backBody.y = 0;
+   backBody.len = 100;
+   backBody.noIk = true;
+
+
    const backLeg1 = new Bone();
-   backLeg1.setParent(body);
+   backLeg1.setParent(backBody);
    backLeg1.x = 0;
    backLeg1.y = 0;
    const backLeg1Foot = new Bone();
@@ -308,7 +317,7 @@
 
 
    const backLeg2 = new Bone();
-   backLeg2.setParent(body);
+   backLeg2.setParent(backBody);
    backLeg2.x = 0;
    backLeg2.y = 0;
    const backLeg2Foot = new Bone();
@@ -336,6 +345,34 @@
    head.len = 80;
    head.angle = -1.5 * Math.PI / 2;
 
+   const ear = new Bone();
+   ear.setParent(head);
+   ear.x = 0;
+   ear.y = 0;
+   ear.len = 20;
+   ear.angle = 0.4;
+
+   const tail1 = new Bone();
+   tail1.setParent(backBody);
+   tail1.x = 0;
+   tail1.y = 0;
+   tail1.len = 50;
+   tail1.angle = -0.4;
+
+   const tail2 = new Bone();
+   tail2.setParent(tail1);
+   tail2.x = 0;
+   tail2.y = 0;
+   tail2.len = 50;
+   tail2.angle = -0.2;
+
+   const tail3 = new Bone();
+   tail3.setParent(tail2);
+   tail3.x = 0;
+   tail3.y = 0;
+   tail3.len = 50;
+   tail3.angle = -0.2;
+
    function draw() {
        ctx.clearRect(0, 0, canvas.width, canvas.height);
        ctx.fillStyle = 'black';
@@ -343,7 +380,7 @@
 
        const target = mouse;
        const bodyStartMatrix = body.startPointMatrix();
-       const bodyEndMatrix = body.endEffectorMatrix();
+       const bodyEndMatrix = backBody.endEffectorMatrix();
        const frontLegBaseTarget = [bodyStartMatrix[0][2], bodyStartMatrix[1][2] + 150];
        const backLegBaseTarget = [bodyEndMatrix[0][2], bodyEndMatrix[1][2] + 150];
 
@@ -397,7 +434,7 @@
 
        bones.forEach(b => b.draw());
 
-       ctx.beginPath();
+           ctx.beginPath();
        ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
        ctx.fillStyle = 'green';
        ctx.fill();
