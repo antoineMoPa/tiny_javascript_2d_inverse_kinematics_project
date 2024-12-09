@@ -72,7 +72,7 @@
        applyConstraints() {
        }
 
-       selfTransformMatrix(deltaAngle = 0) {
+       effectorMatrix(deltaAngle = 0) {
            const c = Math.cos(this.angle + deltaAngle);
            const s = Math.sin(this.angle + deltaAngle);
            const x = this.len * c;
@@ -106,16 +106,9 @@
            ];
        }
 
-       globalOffsetMatrix() {
-           let parentMatrix = this.parentMatrix();
-           let matrix = this.offsetMatrix();
-
-           return math.multiply(parentMatrix, matrix);
-       }
-
        transformMatrix(deltaAngle = 0) {
            // todo: offset is not working
-           const T = this.selfTransformMatrix(deltaAngle);
+           const T = this.effectorMatrix(deltaAngle);
 
            return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T);
        }
@@ -196,7 +189,7 @@
            ctx.beginPath();
            const parentMatrix = this.parentMatrix();
            const matrix = this.transformMatrix();
-           const globalOffsetMatrix = this.globalOffsetMatrix();
+           const globalOffsetMatrix = math.multiply(this.parentMatrix(), this.offsetMatrix());
 
            const x1 = globalOffsetMatrix[0][2];
            const y1 = globalOffsetMatrix[1][2];
