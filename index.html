@@ -59,6 +59,8 @@
        y = 0;
        len = 100;
        angle = 0.4 * Math.PI;
+       minAngle = -Math.PI / 2;
+       maxAngle = Math.PI / 2;
 
        constructor() {
            bones.push(this);
@@ -70,6 +72,12 @@
        }
 
        applyConstraints() {
+           if (this.angle < this.minAngle) {
+               this.angle = this.minAngle;
+           }
+           if (this.angle > this.maxAngle) {
+               this.angle = this.maxAngle;
+           }
        }
 
        localEffectorMatrix(deltaAngle = 0) {
@@ -230,8 +238,10 @@
                jointAngles.reverse();
 
                while (bone) {
-                   if (!bone.noIk)
+                   if (!bone.noIk) {
                        bone.angle = jointAngles.pop() % (2 * Math.PI);
+                       bone.applyConstraints();
+                   }
                    bone = bone.parent;
                }
 
@@ -239,10 +249,6 @@
                    break;
                }
            }
-       }
-
-       update() {
-           this.applyConstraints();
        }
 
        drawFromMatrices() {
@@ -389,7 +395,6 @@
        // Some oscilation for head angle
        head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 200) * 0.1;
 
-       bones.forEach(b => b.update());
        bones.forEach(b => b.draw());
 
        ctx.beginPath();
