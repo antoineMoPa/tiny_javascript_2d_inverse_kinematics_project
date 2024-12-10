@@ -395,6 +395,8 @@
    head.y = 0;
    head.len = 80;
    head.angle = -1.4 * Math.PI / 2;
+   head.minAngle = -1 * Math.PI;
+   head.maxAngle = 1.0 * Math.PI;
 
    bones.forEach(b => b.saveRelaxedState());
 
@@ -637,6 +639,7 @@
            head.angle += Math.cos(-performance.now() / 500) * 0.1;
        }
 
+       head.applyConstraints();
        bones.forEach(b => b.draw());
 
        ctx.beginPath();
