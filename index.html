@@ -620,8 +620,19 @@
            console.error(e);
        }
 
+       // Set angle so head is looking at mouse.
        // Some oscilation for head angle
-       head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 500) * 0.1;
+       const { start } = head.positions();
+       const mouseHeadDiff = math.subtract(mouse, start);
+       if (body.flipX) {
+           head.angle = -math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) - Math.PI * 2/3;
+           head.angle += Math.cos(-performance.now() / 500) * 0.1;
+       }
+       else {
+           head.angle = math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) - Math.PI * 1.75;
+           head.angle += Math.cos(-performance.now() / 500) * 0.1;
+       }
+
 
        bones.forEach(b => b.draw());
 
