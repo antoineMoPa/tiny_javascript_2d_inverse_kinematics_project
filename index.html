@@ -61,6 +61,7 @@
        angle = 0.4 * Math.PI;
        minAngle = -Math.PI / 2;
        maxAngle = Math.PI / 2;
+       drawCallback = () => {};
 
        constructor() {
            bones.push(this);
@@ -279,6 +280,7 @@
 
        draw() {
            this.drawFromMatrices();
+           this.drawCallback();
        }
 
        lastChild() {
@@ -344,6 +346,21 @@
    head.y = 0;
    head.len = 80;
    head.angle = -1.5 * Math.PI / 2;
+   head.drawCallback = () => {
+       const startMatrix = head.startPointMatrix();
+       const endMatrix = head.endEffectorMatrix();
+       const p1 = [startMatrix[0][2], startMatrix[1][2]];
+       const p2 = [endMatrix[0][2], endMatrix[1][2]];
+       const angle = math.atan2(p2[1] - p1[1], p2[0] - p1[0]);
+       const midpoint = math.add(p1, math.multiply(math.subtract(p2, p1), 0.5));
+       const radius = math.norm(math.subtract(p2, p1)) / 2;
+
+       // Draw ellipse
+       ctx.beginPath();
+       ctx.ellipse(midpoint[0], midpoint[1], radius, 30, angle, 0, Math.PI * 2);
+       ctx.fillStyle = "#555555";
+       ctx.fill();
+   };
 
    const ear = new Bone();
    ear.setParent(head);
@@ -434,7 +451,7 @@
 
        bones.forEach(b => b.draw());
 
-           ctx.beginPath();
+       ctx.beginPath();
        ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
        ctx.fillStyle = 'green';
        ctx.fill();
