@@ -506,27 +506,41 @@
        leg.popState();
        let direction = leg.rootParent().flipX ? 1 : -1;
 
-       const size = 50;
-       let gridSnappedX = Math.round((end[0]) / size / 2) * size * 2 + size / 2 * direction;
-       let x1 = gridSnappedX - size/2 * direction;
+       const size = 25;
+       let gridSnappedX = Math.floor(end[0] / size / 2) * size * 2 + size * 2;
+       let x1 = gridSnappedX;
        let y1 = end[1];
        let target1 = [x1, y1];
-       let x2 = gridSnappedX + size/2 * direction;
+       let x2 = gridSnappedX + size * direction * 2.0;
        let y2 = end[1];
        let target2 = [x2, y2];
 
+       const pointVec = math.subtract(end, target1)
        const targetsVec = math.subtract(target2, target1);
-       let f = math.dot(end, targetsVec) / math.norm(math.multiply(targetsVec, targetsVec))
+       let projection = math.dot(pointVec, targetsVec) / math.norm(math.dot(targetsVec, targetsVec));
+       let f = null;
+
+       if (projection < 0) {
+           f = 0.0;
+       }
+       else if (projection > 1) {
+           f = 1.0;
+       }
+       else {
+           f = projection;
+       }
+
+       f = 1.0 - f;
+
+       // Controls how much time the foot stays on the floor
+       f *= 1.5;
+
        f = math.max(math.min(f, 1.0), 0.0);
-       // const dist1 = math.distance(target1, end);
-       // const dist2 = math.distance(target2, end);
-       // const blendFactor = math.max(math.min(dist2 / (dist1 + dist2), 1.0), 0.0);
+
        const blendFactor = f;
        const mix1 = math.multiply(target1, blendFactor);
        const mix2 = math.multiply(target2, 1.0 - blendFactor);
        const target = math.add(mix1, mix2);
-
-       console.log({ blendFactor });
 
        target[1] -= Math.sin(blendFactor * Math.PI) * 10.0;
 
@@ -574,15 +588,18 @@
        // Move body closer to target on x axis
        const deltaX = target[0] - body.x;
 
-       body.flipX = deltaX > 0;
+       //body.flipX = deltaX > 0;
+       body.flipX = false;
 
        const shouldMove = Math.abs(deltaX) > 15;
 
        const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
 
        if (shouldMove) {
-           body.x += clampedDeltaX * deltaTime * 0.01;
+           // body.x += clampedDeltaX * deltaTime * 0.01;
        }
+
+       body.x = mouse[0];
 
        try {
            moveLegToNearestGridSpot(frontLeg1Foot, 0);
