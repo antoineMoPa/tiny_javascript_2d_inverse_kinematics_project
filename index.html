@@ -398,8 +398,6 @@
    head.minAngle = -1 * Math.PI;
    head.maxAngle = 1.0 * Math.PI;
 
-   bones.forEach(b => b.saveRelaxedState());
-
    let shouldLogPosition = false;
 
    document.addEventListener('mousedown', () => {
@@ -499,6 +497,10 @@
    tail3.y = 0;
    tail3.len = 50;
    tail3.angle = -0.2;
+
+
+   bones.forEach(b => b.saveRelaxedState());
+
 
    function moveLegToNearestGridSpot(leg, offset) {
        leg.pushState();
@@ -640,6 +642,13 @@
        }
 
        head.applyConstraints();
+
+       // Move tail
+       tail1.angle = 0.4 * Math.cos(performance.now() * 0.002) * Math.cos(performance.now() * 0.0001);
+       tail2.angle = 0.3 * Math.cos(performance.now() * 0.002 + 1.0) * Math.cos(performance.now() * 0.0001);
+       tail3.angle = 0.2 * Math.cos(performance.now() * 0.002 + 2.0) * Math.cos(performance.now() * 0.0001);
+
+
        bones.forEach(b => b.draw());
 
        ctx.beginPath();
