@@ -508,7 +508,16 @@
 
        const size = 70;
        let x = end[0] - offset * size * 2;
-       let gridSnappedX = Math.floor(x / size / 2) * size * 2 + size * 2 + offset * size * 2;
+
+
+       let gridSnappedX;
+
+       if (direction < 0) {
+           gridSnappedX = Math.floor(x / size / 2) * size * 2 + size * 2 + offset * size * 2;
+       } else {
+           gridSnappedX = Math.ceil(x / size / 2) * size * 2 - size * 2 + offset * size * 2;
+       }
+
        let x1 = gridSnappedX;
        let y1 = end[1];
        let target1 = [x1, y1];
@@ -534,7 +543,7 @@
        f = 1.0 - f;
 
        // Controls how much time the foot stays on the floor
-       f *= 1.5;
+       f *= 1.8;
 
        f = math.max(math.min(f, 1.0), 0.0);
 
@@ -546,20 +555,20 @@
        target[1] -= Math.sin(blendFactor * Math.PI) * 10.0;
 
        // draw target
-       // ctx.beginPath()
-       // ctx.arc(target1[0], target1[1], 5, 0, Math.PI * 2);
-       // ctx.fillStyle = "#FF0000";
-       // ctx.fill();
-       //
-       // ctx.beginPath()
-       // ctx.arc(target2[0], target2[1], 5, 0, Math.PI * 2);
-       // ctx.fillStyle = "#00FF00";
-       // ctx.fill();
-       //
-       // ctx.beginPath()
-       // ctx.arc(target[0], target[1], 5, 0, Math.PI * 2);
-       // ctx.fillStyle = "#00FFFF";
-       // ctx.fill();
+       ctx.beginPath()
+       ctx.arc(target1[0], target1[1], 5, 0, Math.PI * 2);
+       ctx.fillStyle = "#FF0000";
+       ctx.fill();
+
+       ctx.beginPath()
+       ctx.arc(target2[0], target2[1], 5, 0, Math.PI * 2);
+       ctx.fillStyle = "#00FF00";
+       ctx.fill();
+
+       ctx.beginPath()
+       ctx.arc(target[0], target[1], 5, 0, Math.PI * 2);
+       ctx.fillStyle = "#00FFFF";
+       ctx.fill();
 
        leg.ik(target);
 
@@ -589,18 +598,18 @@
        // Move body closer to target on x axis
        const deltaX = target[0] - body.x;
 
-       //body.flipX = deltaX > 0;
-       body.flipX = false;
+       body.flipX = deltaX > 0;
 
        const shouldMove = Math.abs(deltaX) > 15;
 
        const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
 
        if (shouldMove) {
-           // body.x += clampedDeltaX * deltaTime * 0.01;
+           body.x += clampedDeltaX * deltaTime * 0.01;
        }
 
-       body.x = mouse[0];
+       // For debugging:
+       // body.x = mouse[0];
 
        try {
            moveLegToNearestGridSpot(frontLeg1Foot, 0);
@@ -612,7 +621,7 @@
        }
 
        // Some oscilation for head angle
-       //head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 200) * 0.1;
+       head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 500) * 0.1;
 
        bones.forEach(b => b.draw());
 
