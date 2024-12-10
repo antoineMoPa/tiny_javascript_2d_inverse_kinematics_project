@@ -62,9 +62,47 @@
        minAngle = -Math.PI / 2;
        maxAngle = Math.PI / 2;
        drawCallback = null;
+       noIk = false;
+
+       state = [];
+       relaxedState = null;
 
        constructor() {
            bones.push(this);
+       }
+
+       saveState() {
+           return {
+               angle: this.angle,
+           };
+       }
+
+       saveRelaxedState() {
+           this.relaxedState = this.saveState();
+       }
+
+       restoreRelaxedState() {
+           let bone = this;
+
+           do {
+               bone.setState(bone.relaxedState);
+               bone = bone.parent;
+           } while (bone && !bone.noIk);
+       }
+
+       setState(state) {
+           this.angle = state.angle;
+       }
+
+       pushState() {
+           this.state.push(this.saveState());
+       }
+
+       popState() {
+           if (this.state.length == 0) {
+               throw new Error("nothing to pop");
+           }
+           this.setState(this.state.pop());
        }
 
        setParent(parent) {
@@ -172,6 +210,15 @@
            m = math.multiply(T2, m);
 
            return m;
+       }
+
+       positions() {
+           const startMatrix = this.startPointMatrix();
+           const endMatrix = this.endEffectorMatrix();
+           const start = [startMatrix[0][2], startMatrix[1][2]];
+           const end = [endMatrix[0][2], endMatrix[1][2]];
+
+           return { start, end };
        }
 
        rootParent() {
@@ -349,6 +396,8 @@
    head.len = 80;
    head.angle = -1.4 * Math.PI / 2;
 
+   bones.forEach(b => b.saveRelaxedState());
+
    let shouldLogPosition = false;
 
    document.addEventListener('mousedown', () => {
@@ -449,7 +498,64 @@
    tail3.len = 50;
    tail3.angle = -0.2;
 
+   function moveLegToNearestGridSpot(leg, offset) {
+       leg.pushState();
+       leg.restoreRelaxedState();
+
+       const { start, end } = leg.positions();
+       leg.popState();
+       let direction = leg.rootParent().flipX ? 1 : -1;
+
+       const size = 50;
+       let gridSnappedX = Math.round((end[0]) / size / 2) * size * 2 + size / 2 * direction;
+       let x1 = gridSnappedX - size/2 * direction;
+       let y1 = end[1];
+       let target1 = [x1, y1];
+       let x2 = gridSnappedX + size/2 * direction;
+       let y2 = end[1];
+       let target2 = [x2, y2];
+
+       const targetsVec = math.subtract(target2, target1);
+       let f = math.dot(end, targetsVec) / math.norm(math.multiply(targetsVec, targetsVec))
+       f = math.max(math.min(f, 1.0), 0.0);
+       // const dist1 = math.distance(target1, end);
+       // const dist2 = math.distance(target2, end);
+       // const blendFactor = math.max(math.min(dist2 / (dist1 + dist2), 1.0), 0.0);
+       const blendFactor = f;
+       const mix1 = math.multiply(target1, blendFactor);
+       const mix2 = math.multiply(target2, 1.0 - blendFactor);
+       const target = math.add(mix1, mix2);
+
+       console.log({ blendFactor });
+
+       target[1] -= Math.sin(blendFactor * Math.PI) * 10.0;
+
+       // draw target
+       ctx.beginPath()
+       ctx.arc(target1[0], target1[1], 5, 0, Math.PI * 2);
+       ctx.fillStyle = "#FF0000";
+       ctx.fill();
+
+       ctx.beginPath()
+       ctx.arc(target2[0], target2[1], 5, 0, Math.PI * 2);
+       ctx.fillStyle = "#00FF00";
+       ctx.fill();
+
+       ctx.beginPath()
+       ctx.arc(target[0], target[1], 5, 0, Math.PI * 2);
+       ctx.fillStyle = "#00FFFF";
+       ctx.fill();
+
+       leg.ik(target);
+
+   }
+
+   let lastTime = performance.now();
+
    function draw() {
+       const currentTime = performance.now();
+       const deltaTime = currentTime - lastTime;
+
        ctx.clearRect(0, 0, canvas.width, canvas.height);
        ctx.fillStyle = 'black';
        ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -475,32 +581,14 @@
        const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
 
        if (shouldMove) {
-           body.x += clampedDeltaX;
-       }
-
-       if (shouldMove) {
-           // Some oscillation
-           const d = -Math.sign(deltaX); // direction
-           frontLeg1Target[0] += Math.cos(-performance.now() / 200 * d) * 30;
-           frontLeg1Target[1] += Math.sin(-performance.now() / 200 * d) * 30;
-           frontLeg2Target[0] += Math.cos(-performance.now() / 200 * d+ Math.PI) * 30;
-           frontLeg2Target[1] += Math.sin(-performance.now() / 200 * d+ Math.PI) * 30;
-
-
-           backLeg1Target[0] += Math.cos(-performance.now() / 200 * d) * 30;
-           backLeg1Target[1] += Math.sin(-performance.now() / 200 * d) * 30;
-           backLeg2Target[0] += Math.cos(-performance.now() / 200 * d + Math.PI) * 30;
-           backLeg2Target[1] += Math.sin(-performance.now() / 200 * d + Math.PI) * 30;
-
+           body.x += clampedDeltaX * deltaTime * 0.01;
        }
 
        try {
-           if (shouldMove) {
-               frontLeg1Foot.ik(frontLeg1Target);
-               frontLeg2Foot.ik(frontLeg2Target);
-               backLeg1Foot.ik(backLeg1Target);
-               backLeg2Foot.ik(backLeg2Target);
-           }
+           moveLegToNearestGridSpot(frontLeg1Foot, 0);
+           moveLegToNearestGridSpot(frontLeg2Foot, 1);
+           moveLegToNearestGridSpot(backLeg1Foot, 0);
+           moveLegToNearestGridSpot(backLeg2Foot, 1);
        } catch (e) {
            console.error(e);
        }
@@ -515,6 +603,7 @@
        ctx.fillStyle = 'green';
        ctx.fill();
 
+       lastTime = currentTime;
        requestAnimationFrame(draw);
    }
 
