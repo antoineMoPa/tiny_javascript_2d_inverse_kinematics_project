@@ -25,7 +25,7 @@
   </style>
 </head>
 <body>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+  <script src="./math.min.js"></script>
   <canvas id="animationCanvas"></canvas>
   <script>
    const canvas = document.getElementById('animationCanvas');
@@ -61,7 +61,7 @@
        angle = 0.4 * Math.PI;
        minAngle = -Math.PI / 2;
        maxAngle = Math.PI / 2;
-       drawCallback = () => {};
+       drawCallback = null;
 
        constructor() {
            bones.push(this);
@@ -252,7 +252,7 @@
            }
        }
 
-       drawFromMatrices() {
+       drawLine() {
            ctx.beginPath();
            const startMatrix = this.startPointMatrix();
            const endMatrix = this.endEffectorMatrix();
@@ -279,8 +279,11 @@
        }
 
        draw() {
-           this.drawFromMatrices();
-           this.drawCallback();
+           if (this.drawCallback) {
+               this.drawCallback();
+           } else {
+               this.drawLine();
+           }
        }
 
        lastChild() {
@@ -295,7 +298,7 @@
    const body = new Bone();
    body.angle = 0.0;
    body.x = window.innerWidth / 2;
-   body.y = 300;
+   body.y = window.innerHeight - 200;
    body.len = 100;
    body.noIk = true;
    body.flipX = false;
@@ -325,7 +328,6 @@
    const backLeg2Foot = new Bone();
    backLeg2Foot.setParent(backLeg2);
 
-
    const frontLeg1 = new Bone();
    frontLeg1.setParent(body);
    frontLeg1.x = -body.len;
@@ -345,7 +347,14 @@
    head.x = -body.len;
    head.y = 0;
    head.len = 80;
-   head.angle = -1.5 * Math.PI / 2;
+   head.angle = -1.4 * Math.PI / 2;
+
+   let shouldLogPosition = false;
+
+   document.addEventListener('mousedown', () => {
+       shouldLogPosition = true;
+   });
+
    head.drawCallback = () => {
        const startMatrix = head.startPointMatrix();
        const endMatrix = head.endEffectorMatrix();
@@ -354,12 +363,52 @@
        const angle = math.atan2(p2[1] - p1[1], p2[0] - p1[0]);
        const midpoint = math.add(p1, math.multiply(math.subtract(p2, p1), 0.5));
        const radius = math.norm(math.subtract(p2, p1)) / 2;
+       const upVector = math.subtract(p2, p1);
+       const rightVector = body.flipX ? [-upVector[1], upVector[0]] : [upVector[1], -upVector[0]];
 
-       // Draw ellipse
+       if (shouldLogPosition) {
+           // Log position relative to up and right vectors
+           const mouseVector = math.subtract(mouse, p1);
+
+           console.log({
+               up: math.dot(mouseVector, upVector) / math.norm(math.multiply(upVector, upVector)),
+               right: math.dot(mouseVector, rightVector) / math.norm(math.multiply(rightVector, rightVector)),
+           });
+           shouldLogPosition = false;
+       }
+
+       // Draw head
        ctx.beginPath();
-       ctx.ellipse(midpoint[0], midpoint[1], radius, 30, angle, 0, Math.PI * 2);
-       ctx.fillStyle = "#555555";
-       ctx.fill();
+       ctx.arc(midpoint[0], midpoint[1], radius, 0, Math.PI * 2);
+       ctx.strokeStyle = '#ffffff';
+       ctx.stroke();
+
+       // Draw nose
+       const x = midpoint[0] + 0.2 * upVector[0] + 0.35 * rightVector[0];
+       const y = midpoint[1] + 0.2 * upVector[1] + 0.35 * rightVector[1];
+       ctx.beginPath();
+       ctx.arc(x, y, 20, 0, Math.PI * 2);
+       ctx.strokeStyle = '#ffffff';
+       ctx.stroke();
+
+       // Ears triangle
+       const ears = [
+           {up: 0.9640970432815996, right: -0.0978743640371591},
+           {up: 1.1149200822997452, right: -0.31560966411808533},
+           {up: 0.820865001658949, right: -0.38008143739395395}
+       ];
+       ctx.beginPath();
+       ears.forEach((ear, idx) => {
+           const x = p1[0] + ear.up * upVector[0] + ear.right * rightVector[0];
+           const y = p1[1] + ear.up * upVector[1] + ear.right * rightVector[1];
+           if (idx === 0) {
+               ctx.moveTo(x, y);
+           } else {
+               ctx.lineTo(x, y);
+           }
+       });
+       ctx.strokeStyle = '#ffffff';
+       ctx.stroke();
    };
 
    const ear = new Bone();
@@ -368,6 +417,16 @@
    ear.y = 0;
    ear.len = 20;
    ear.angle = 0.4;
+
+   ear.drawCallback = () => {
+       const startMatrix = ear.startPointMatrix();
+       const endMatrix = ear.endEffectorMatrix();
+       const p1 = [startMatrix[0][2], startMatrix[1][2]];
+       const p2 = [endMatrix[0][2], endMatrix[1][2]];
+       const angle = math.atan2(p2[1] - p1[1], p2[0] - p1[0]);
+       const midpoint = math.add(p1, math.multiply(math.subtract(p2, p1), 0.5));
+       const radius = math.norm(math.subtract(p2, p1)) / 2;
+   };
 
    const tail1 = new Bone();
    tail1.setParent(backBody);
@@ -411,7 +470,7 @@
 
        body.flipX = deltaX > 0;
 
-       const shouldMove = Math.abs(deltaX) > 15;
+       const shouldMove = Math.abs(deltaX) > 15 && false;
 
        const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
 
@@ -447,7 +506,7 @@
        }
 
        // Some oscilation for head angle
-       head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 200) * 0.1;
+       //head.angle = -1.5 * Math.PI / 2 + Math.cos(-performance.now() / 200) * 0.1;
 
        bones.forEach(b => b.draw());
 
