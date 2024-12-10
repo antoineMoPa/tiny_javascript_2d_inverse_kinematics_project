@@ -380,16 +380,16 @@
        // Draw head
        ctx.beginPath();
        ctx.arc(midpoint[0], midpoint[1], radius, 0, Math.PI * 2);
-       ctx.strokeStyle = '#ffffff';
-       ctx.stroke();
+       ctx.fillStyle = '#555555';
+       ctx.fill();
 
        // Draw nose
        const x = midpoint[0] + 0.2 * upVector[0] + 0.35 * rightVector[0];
        const y = midpoint[1] + 0.2 * upVector[1] + 0.35 * rightVector[1];
        ctx.beginPath();
        ctx.arc(x, y, 20, 0, Math.PI * 2);
-       ctx.strokeStyle = '#ffffff';
-       ctx.stroke();
+       ctx.fillStyle = '#555555';
+       ctx.fill();
 
        // Ears triangle
        const ears = [
@@ -407,8 +407,8 @@
                ctx.lineTo(x, y);
            }
        });
-       ctx.strokeStyle = '#ffffff';
-       ctx.stroke();
+       ctx.fillStyle = '#555555';
+       ctx.fill();
    };
 
    const ear = new Bone();
@@ -470,7 +470,7 @@
 
        body.flipX = deltaX > 0;
 
-       const shouldMove = Math.abs(deltaX) > 15 && false;
+       const shouldMove = Math.abs(deltaX) > 15;
 
        const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
 
