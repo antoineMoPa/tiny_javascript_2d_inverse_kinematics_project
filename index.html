@@ -52,6 +52,8 @@
        return math.pinv(matrix); // Math.js pseudo-inverse
    }
 
+   DRAW_GIZMOS = false;
+
    class Bone {
        parent = null;
        child = null;
@@ -314,15 +316,17 @@
            ctx.strokeStyle = 'white';
            ctx.stroke();
 
-           ctx.beginPath();
-           ctx.arc(x1, y1, 5, 0, Math.PI * 2);
-           ctx.fillStyle = 'red';
-           ctx.fill();
+           if (DRAW_GIZMOS) {
+               ctx.beginPath();
+               ctx.arc(x1, y1, 5, 0, Math.PI * 2);
+               ctx.fillStyle = 'red';
+               ctx.fill();
 
-           ctx.beginPath();
-           ctx.arc(x2, y2, 5, 0, Math.PI * 2);
-           ctx.fillStyle = 'blue';
-           ctx.fill();
+               ctx.beginPath();
+               ctx.arc(x2, y2, 5, 0, Math.PI * 2);
+               ctx.fillStyle = 'blue';
+               ctx.fill();
+           }
        }
 
        draw() {
@@ -342,10 +346,13 @@
        }
    }
 
+   const bodyHeight = 200;
+   const floor = window.innerHeight;
+
    const body = new Bone();
    body.angle = 0.0;
    body.x = window.innerWidth / 2;
-   body.y = window.innerHeight - 200;
+   body.y = floor - bodyHeight;
    body.len = 100;
    body.noIk = true;
    body.flipX = false;
@@ -398,10 +405,10 @@
    head.minAngle = -1 * Math.PI;
    head.maxAngle = 1.0 * Math.PI;
 
-   let shouldLogPosition = false;
+   let jump = false;
 
    document.addEventListener('mousedown', () => {
-       shouldLogPosition = true;
+       jump = true;
    });
 
    head.drawCallback = () => {
@@ -414,17 +421,6 @@
        const radius = math.norm(math.subtract(p2, p1)) / 2;
        const upVector = math.subtract(p2, p1);
        const rightVector = body.flipX ? [-upVector[1], upVector[0]] : [upVector[1], -upVector[0]];
-
-       if (shouldLogPosition) {
-           // Log position relative to up and right vectors
-           const mouseVector = math.subtract(mouse, p1);
-
-           console.log({
-               up: math.dot(mouseVector, upVector) / math.norm(math.multiply(upVector, upVector)),
-               right: math.dot(mouseVector, rightVector) / math.norm(math.multiply(rightVector, rightVector)),
-           });
-           shouldLogPosition = false;
-       }
 
        // Draw head
        ctx.beginPath();
@@ -558,29 +554,30 @@
 
        target[1] -= Math.sin(blendFactor * Math.PI) * 10.0;
 
-       // draw target
-       ctx.beginPath()
-       ctx.arc(target1[0], target1[1], 5, 0, Math.PI * 2);
-       ctx.fillStyle = "#FF0000";
-       ctx.fill();
+       if (DRAW_GIZMOS) {
+           // draw target
+           ctx.beginPath()
+           ctx.arc(target1[0], target1[1], 5, 0, Math.PI * 2);
+           ctx.fillStyle = "#FF0000";
+           ctx.fill();
 
-       ctx.beginPath()
-       ctx.arc(target2[0], target2[1], 5, 0, Math.PI * 2);
-       ctx.fillStyle = "#00FF00";
-       ctx.fill();
+           ctx.beginPath()
+           ctx.arc(target2[0], target2[1], 5, 0, Math.PI * 2);
+           ctx.fillStyle = "#00FF00";
+           ctx.fill();
 
-       ctx.beginPath()
-       ctx.arc(target[0], target[1], 5, 0, Math.PI * 2);
-       ctx.fillStyle = "#00FFFF";
-       ctx.fill();
+           ctx.beginPath()
+           ctx.arc(target[0], target[1], 5, 0, Math.PI * 2);
+           ctx.fillStyle = "#00FFFF";
+           ctx.fill();
+       }
 
        leg.ik(target);
-
    }
 
    let lastTime = performance.now();
 
-   function draw() {
+   function update() {
        const currentTime = performance.now();
        const deltaTime = currentTime - lastTime;
 
@@ -601,6 +598,15 @@
 
        // Move body closer to target on x axis
        const deltaX = target[0] - body.x;
+
+       if (jump) {
+           jump = false;
+           body.y -= 100;
+       }
+
+       if (body.y < floor - bodyHeight) {
+           body.y += deltaTime * 0.5;
+       }
 
        body.flipX = deltaX > 0;
 
@@ -657,10 +663,10 @@
        ctx.fill();
 
        lastTime = currentTime;
-       requestAnimationFrame(draw);
+       requestAnimationFrame(update);
    }
 
-   draw();
+   update();
   </script>
 </body>
 </html>
