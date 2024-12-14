@@ -57,8 +57,8 @@
    class Bone {
        parent = null;
        child = null;
-       x = 0;
-       y = 0;
+       position = [0,0];
+       acceleration = [0, 0];
        len = 100;
        angle = 0.4 * Math.PI;
        minAngle = -Math.PI / 2;
@@ -149,8 +149,8 @@
 
        offsetMatrix() {
            return [
-               [1, 0, this.x],
-               [0, 1, this.y],
+               [1, 0, this.position[0]],
+               [0, 1, this.position[1]],
                [0, 0, 1]
            ];
        }
@@ -165,13 +165,13 @@
        startPointMatrix(deltaAngle = 0) {
            const rootParent = this.rootParent();
            const T1 = [
-               [1, 0, -rootParent.x],
-               [0, 1, -rootParent.y],
+               [1, 0, -rootParent.position[0]],
+               [0, 1, -rootParent.position[1]],
                [0, 0, 1]
            ];
            const T2 = [
-               [1, 0, rootParent.x],
-               [0, 1, rootParent.y],
+               [1, 0, rootParent.position[0]],
+               [0, 1, rootParent.position[1]],
                [0, 0, 1]
            ];
            const S = [
@@ -191,13 +191,13 @@
        endEffectorMatrix(deltaAngle = 0) {
            const rootParent = this.rootParent();
            const T1 = [
-               [1, 0, -rootParent.x],
-               [0, 1, -rootParent.y],
+               [1, 0, -rootParent.position[0]],
+               [0, 1, -rootParent.position[1]],
                [0, 0, 1]
            ];
            const T2 = [
-               [1, 0, rootParent.x],
-               [0, 1, rootParent.y],
+               [1, 0, rootParent.position[0]],
+               [0, 1, rootParent.position[1]],
                [0, 0, 1]
            ];
            const S = [
@@ -351,8 +351,8 @@
 
    const body = new Bone();
    body.angle = 0.0;
-   body.x = window.innerWidth / 2;
-   body.y = floor - bodyHeight;
+   body.position[0] = window.innerWidth / 2;
+   body.position[1] = floor - bodyHeight;
    body.len = 100;
    body.noIk = true;
    body.flipX = false;
@@ -360,16 +360,16 @@
    const backBody = new Bone();
    backBody.setParent(body);
    backBody.angle = 0.1;
-   backBody.x = 0;
-   backBody.y = 0;
+   backBody.position[0] = 0;
+   backBody.position[1] = 0;
    backBody.len = 100;
    backBody.noIk = true;
 
 
    const backLeg1 = new Bone();
    backLeg1.setParent(backBody);
-   backLeg1.x = 0;
-   backLeg1.y = 0;
+   backLeg1.position[0] = 0;
+   backLeg1.position[1] = 0;
    const backLeg1Foot = new Bone();
 
    backLeg1Foot.setParent(backLeg1);
@@ -377,29 +377,29 @@
 
    const backLeg2 = new Bone();
    backLeg2.setParent(backBody);
-   backLeg2.x = 0;
-   backLeg2.y = 0;
+   backLeg2.position[0] = 0;
+   backLeg2.position[1] = 0;
    const backLeg2Foot = new Bone();
    backLeg2Foot.setParent(backLeg2);
 
    const frontLeg1 = new Bone();
    frontLeg1.setParent(body);
-   frontLeg1.x = -body.len;
-   frontLeg1.y = 0;
+   frontLeg1.position[0] = -body.len;
+   frontLeg1.position[1] = 0;
    const frontLeg1Foot = new Bone();
    frontLeg1Foot.setParent(frontLeg1);
 
    const frontLeg2 = new Bone();
    frontLeg2.setParent(body);
-   frontLeg2.x = -body.len;
-   frontLeg2.y = 0;
+   frontLeg2.position[0] = -body.len;
+   frontLeg2.position[1] = 0;
    const frontLeg2Foot = new Bone();
    frontLeg2Foot.setParent(frontLeg2);
 
    const head = new Bone();
    head.setParent(body);
-   head.x = -body.len;
-   head.y = 0;
+   head.position[0] = -body.len;
+   head.position[1] = 0;
    head.len = 80;
    head.angle = -1.4 * Math.PI / 2;
    head.minAngle = -1 * Math.PI;
@@ -458,8 +458,8 @@
 
    const ear = new Bone();
    ear.setParent(head);
-   ear.x = 0;
-   ear.y = 0;
+   ear.position[0] = 0;
+   ear.position[1] = 0;
    ear.len = 20;
    ear.angle = 0.4;
 
@@ -475,22 +475,22 @@
 
    const tail1 = new Bone();
    tail1.setParent(backBody);
-   tail1.x = 0;
-   tail1.y = 0;
+   tail1.position[0] = 0;
+   tail1.position[1] = 0;
    tail1.len = 50;
    tail1.angle = -0.4;
 
    const tail2 = new Bone();
    tail2.setParent(tail1);
-   tail2.x = 0;
-   tail2.y = 0;
+   tail2.position[0] = 0;
+   tail2.position[1] = 0;
    tail2.len = 50;
    tail2.angle = -0.2;
 
    const tail3 = new Bone();
    tail3.setParent(tail2);
-   tail3.x = 0;
-   tail3.y = 0;
+   tail3.position[0] = 0;
+   tail3.position[1] = 0;
    tail3.len = 50;
    tail3.angle = -0.2;
 
@@ -597,15 +597,15 @@
        let backLeg2Target = math.add(backLegBaseTarget, [10, 0]);
 
        // Move body closer to target on x axis
-       const deltaX = target[0] - body.x;
+       const deltaX = target[0] - body.position[0];
 
        if (jump) {
            jump = false;
-           body.y -= 100;
+           body.position[1] -= 100;
        }
 
-       if (body.y < floor - bodyHeight) {
-           body.y += deltaTime * 0.5;
+       if (body.position[1] < floor - bodyHeight) {
+           body.position[1] += deltaTime * 0.5;
        }
 
        body.flipX = deltaX > 0;
@@ -615,11 +615,11 @@
        const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
 
        if (shouldMove) {
-           body.x += clampedDeltaX * deltaTime * 0.0001 * math.norm(deltaX);
+           body.position[0] += clampedDeltaX * deltaTime * 0.0001 * math.norm(deltaX);
        }
 
        // For debugging:
-       // body.x = mouse[0];
+       // body.position[0] = mouse[0];
 
        try {
            moveLegToNearestGridSpot(frontLeg1Foot, 0);
