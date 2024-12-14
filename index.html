@@ -231,6 +231,14 @@
            return bone;
        }
 
+       update(deltaTime) {
+           const damping = 0.99;
+           if (math.norm(this.acceleration) > 0.001){
+               this.acceleration = math.multiply(this.acceleration, damping);
+               this.position = math.add(this.position, math.multiply(this.acceleration, deltaTime));
+           }
+       }
+
        ik(target) {
            const MAX_IT = 20;
            for (let i = 0; i < MAX_IT; i++) {
@@ -581,6 +589,8 @@
        const currentTime = performance.now();
        const deltaTime = currentTime - lastTime;
 
+       bones.forEach(b => b.update(deltaTime));
+
        ctx.clearRect(0, 0, canvas.width, canvas.height);
        ctx.fillStyle = 'black';
        ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -601,11 +611,14 @@
 
        if (jump) {
            jump = false;
-           body.position[1] -= 100;
+           body.acceleration[1] = -30.0;
        }
 
        if (body.position[1] < floor - bodyHeight) {
-           body.position[1] += deltaTime * 0.5;
+           body.acceleration[1] = 0.5;
+       } else {
+           // floor stops acceleration abruptly
+           body.acceleration[1] *= 0.1;
        }
 
        body.flipX = deltaX > 0;
