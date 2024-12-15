@@ -64,6 +64,7 @@
        minAngle = -2.0 * Math.PI;
        maxAngle = 2.0 * Math.PI;
        drawCallback = null;
+       stableAngle = null;
        noIk = false;
 
        state = [];
@@ -237,6 +238,11 @@
                this.acceleration = math.multiply(this.acceleration, damping);
                this.position = math.add(this.position, math.multiply(this.acceleration, deltaTime));
            }
+
+           if (this.stableAngle) {
+               const factor = 0.005 * deltaTime;
+               this.angle = this.angle * (1.0 - factor) + this.stableAngle * factor;
+           }
        }
 
        ik(target) {
@@ -358,7 +364,8 @@
    const floor = window.innerHeight;
 
    const cat = new Bone();
-   cat.angle = -0.05;
+   cat.stableAngle = -0.05;
+   cat.angle = cat.stableAngle;
    cat.position[0] = window.innerWidth / 2;
    cat.position[1] = floor - bodyHeight;
    cat.len = 100;
@@ -566,6 +573,7 @@
        const target = math.add(mix1, mix2);
 
        target[1] -= Math.sin(blendFactor * Math.PI) * 10.0;
+       target[1] = Math.max(target[1], floor - bodyHeight);
 
        if (DRAW_GIZMOS) {
            // draw target
@@ -617,6 +625,7 @@
        if (jump) {
            jump = false;
            cat.acceleration[1] = -30.0;
+           cat.angle = 2.0;
        }
 
        if (cat.position[1] < floor - bodyHeight) {
