@@ -358,7 +358,7 @@
    const floor = window.innerHeight;
 
    const body = new Bone();
-   body.angle = 0.0;
+   body.angle = 0;
    body.position[0] = window.innerWidth / 2;
    body.position[1] = floor - bodyHeight;
    body.len = 100;
@@ -367,7 +367,7 @@
 
    const backBody = new Bone();
    backBody.setParent(body);
-   backBody.angle = 0.1;
+   backBody.angle = 1.1;
    backBody.position[0] = 0;
    backBody.position[1] = 0;
    backBody.len = 100;
