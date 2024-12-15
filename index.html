@@ -235,7 +235,7 @@
        update(deltaTime) {
            const damping = 0.99;
            if (math.norm(this.acceleration) > 0.001){
-               this.acceleration = math.multiply(this.acceleration, damping);
+               //this.acceleration = math.multiply(this.acceleration, damping);
                this.position = math.add(this.position, math.multiply(this.acceleration, deltaTime));
            }
 
@@ -422,8 +422,8 @@
    head.setParent(body);
    head.len = 80;
    head.angle = Math.PI / 2;
-   // head.minAngle = -1 * Math.PI;
-   // head.maxAngle = 1.0 * Math.PI;
+   head.minAngle = -2;
+   head.maxAngle = 2;
 
    let jump = false;
 
@@ -573,7 +573,9 @@
        const target = math.add(mix1, mix2);
 
        target[1] -= Math.sin(blendFactor * Math.PI) * 10.0;
-       target[1] = Math.max(target[1], floor - bodyHeight);
+
+       // Make sure target is not bellow floor
+       target[1] = Math.min(target[1], floor);
 
        if (DRAW_GIZMOS) {
            // draw target
@@ -623,11 +625,10 @@
        const deltaX = target[0] - cat.position[0];
 
        if (jump) {
-           jump = false;
-           cat.acceleration[1] = -30.0;
+           cat.acceleration[1] = -20.0;
            cat.angle = 2.0;
+           jump = false;
        }
-
        if (cat.position[1] < floor - bodyHeight) {
            cat.acceleration[1] = 0.5;
        } else {
@@ -667,11 +668,13 @@
            let angleTarget = -math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) + 1.0;
            head.angle = (angleTarget * angleBlendFac) + (head.angle * (1.0 - angleBlendFac)) ;
            head.angle += Math.cos(-performance.now() / 500) * 0.1;
+           head.angle = head.angle % Math.PI;
        }
        else {
            let angleTarget = math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) + 4.0;
            head.angle = angleTarget;
            head.angle += Math.cos(-performance.now() / 500) * 0.1;
+           head.angle = head.angle % Math.PI;
        }
 
        head.applyConstraints();
