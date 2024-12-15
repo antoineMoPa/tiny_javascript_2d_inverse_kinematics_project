@@ -61,8 +61,8 @@
        acceleration = [0, 0];
        len = 100;
        angle = 0.4 * Math.PI;
-       minAngle = -Math.PI / 2;
-       maxAngle = Math.PI / 2;
+       minAngle = -2.0 * Math.PI;
+       maxAngle = 2.0 * Math.PI;
        drawCallback = null;
        noIk = false;
 
@@ -358,7 +358,7 @@
    const floor = window.innerHeight;
 
    const cat = new Bone();
-   cat.angle = 0.0;
+   cat.angle = -0.05;
    cat.position[0] = window.innerWidth / 2;
    cat.position[1] = floor - bodyHeight;
    cat.len = 100;
@@ -366,14 +366,14 @@
    cat.flipX = false;
 
    const body = new Bone();
-   body.angle = 0.0;
+   body.angle = Math.PI - 0.1;
    body.len = 100;
    body.noIk = true;
    body.flipX = false;
    body.setParent(cat);
 
    const backBody = new Bone();
-   backBody.setParent(body);
+   backBody.setParent(cat);
    backBody.angle = 0.1;
    backBody.position[0] = 0;
    backBody.position[1] = 0;
@@ -398,27 +398,25 @@
    backLeg2Foot.setParent(backLeg2);
 
    const frontLeg1 = new Bone();
+   frontLeg1.angle = -Math.PI / 2;
    frontLeg1.setParent(body);
-   frontLeg1.position[0] = -body.len;
    frontLeg1.position[1] = 0;
    const frontLeg1Foot = new Bone();
    frontLeg1Foot.setParent(frontLeg1);
 
    const frontLeg2 = new Bone();
+   frontLeg2.angle = -Math.PI / 2;
    frontLeg2.setParent(body);
-   frontLeg2.position[0] = -body.len;
    frontLeg2.position[1] = 0;
    const frontLeg2Foot = new Bone();
    frontLeg2Foot.setParent(frontLeg2);
 
    const head = new Bone();
    head.setParent(body);
-   head.position[0] = -body.len;
-   head.position[1] = 0;
    head.len = 80;
-   head.angle = -1.4 * Math.PI / 2;
-   head.minAngle = -1 * Math.PI;
-   head.maxAngle = 1.0 * Math.PI;
+   head.angle = Math.PI / 2;
+   // head.minAngle = -1 * Math.PI;
+   // head.maxAngle = 1.0 * Math.PI;
 
    let jump = false;
 
@@ -657,12 +655,12 @@
 
        const angleBlendFac = deltaTime * 0.01;
        if (cat.flipX) {
-           let angleTarget = -math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) - Math.PI * 2/3
+           let angleTarget = -math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) + 1.0;
            head.angle = (angleTarget * angleBlendFac) + (head.angle * (1.0 - angleBlendFac)) ;
            head.angle += Math.cos(-performance.now() / 500) * 0.1;
        }
        else {
-           let angleTarget = math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) + Math.PI * 0.2;
+           let angleTarget = math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) + 4.0;
            head.angle = angleTarget;
            head.angle += Math.cos(-performance.now() / 500) * 0.1;
        }
