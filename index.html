@@ -357,17 +357,24 @@
    const bodyHeight = 200;
    const floor = window.innerHeight;
 
+   const cat = new Bone();
+   cat.angle = 0.0;
+   cat.position[0] = window.innerWidth / 2;
+   cat.position[1] = floor - bodyHeight;
+   cat.len = 100;
+   cat.noIk = true;
+   cat.flipX = false;
+
    const body = new Bone();
-   body.angle = 0;
-   body.position[0] = window.innerWidth / 2;
-   body.position[1] = floor - bodyHeight;
+   body.angle = 0.0;
    body.len = 100;
    body.noIk = true;
    body.flipX = false;
+   body.setParent(cat);
 
    const backBody = new Bone();
    backBody.setParent(body);
-   backBody.angle = 1.1;
+   backBody.angle = 0.1;
    backBody.position[0] = 0;
    backBody.position[1] = 0;
    backBody.len = 100;
@@ -428,7 +435,7 @@
        const midpoint = math.add(p1, math.multiply(math.subtract(p2, p1), 0.5));
        const radius = math.norm(math.subtract(p2, p1)) / 2;
        const upVector = math.subtract(p2, p1);
-       const rightVector = body.flipX ? [-upVector[1], upVector[0]] : [upVector[1], -upVector[0]];
+       const rightVector = cat.flipX ? [-upVector[1], upVector[0]] : [upVector[1], -upVector[0]];
 
        // Draw head
        ctx.beginPath();
@@ -607,32 +614,32 @@
        let backLeg2Target = math.add(backLegBaseTarget, [10, 0]);
 
        // Move body closer to target on x axis
-       const deltaX = target[0] - body.position[0];
+       const deltaX = target[0] - cat.position[0];
 
        if (jump) {
            jump = false;
-           body.acceleration[1] = -30.0;
+           cat.acceleration[1] = -30.0;
        }
 
-       if (body.position[1] < floor - bodyHeight) {
-           body.acceleration[1] = 0.5;
+       if (cat.position[1] < floor - bodyHeight) {
+           cat.acceleration[1] = 0.5;
        } else {
            // floor stops acceleration abruptly
-           body.acceleration[1] *= 0.1;
+           cat.acceleration[1] *= 0.1;
        }
 
-       body.flipX = deltaX > 0;
+       cat.flipX = deltaX > 0;
 
        const shouldMove = Math.abs(deltaX) > 15;
 
        const clampedDeltaX = Math.max(Math.min(deltaX, 10), -10);
 
        if (shouldMove) {
-           body.position[0] += clampedDeltaX * deltaTime * 0.0001 * math.norm(deltaX);
+           cat.position[0] += clampedDeltaX * deltaTime * 0.0001 * math.norm(deltaX);
        }
 
        // For debugging:
-       // body.position[0] = mouse[0];
+       // cat.position[0] = mouse[0];
 
        try {
            moveLegToNearestGridSpot(frontLeg1Foot, 0);
@@ -649,7 +656,7 @@
        const mouseHeadDiff = math.subtract(mouse, start);
 
        const angleBlendFac = deltaTime * 0.01;
-       if (body.flipX) {
+       if (cat.flipX) {
            let angleTarget = -math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) - Math.PI * 2/3
            head.angle = (angleTarget * angleBlendFac) + (head.angle * (1.0 - angleBlendFac)) ;
            head.angle += Math.cos(-performance.now() / 500) * 0.1;
