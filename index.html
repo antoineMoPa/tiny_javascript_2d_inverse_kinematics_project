@@ -66,6 +66,9 @@
        drawCallback = null;
        stableAngle = null;
        noIk = false;
+       image = null;
+       imageAngle = 1.0;
+       imageOffset = [0, 0];
 
        state = [];
        relaxedState = null;
@@ -344,6 +347,44 @@
        }
 
        draw() {
+           if (this.image) {
+               const startMatrix = this.startPointMatrix();
+               const endMatrix = this.endEffectorMatrix();
+
+               const x1 = startMatrix[0][2];
+               const y1 = startMatrix[1][2];
+               const x2 = endMatrix[0][2];
+               const y2 = endMatrix[1][2];
+
+               const flipX = this.rootParent().flipX;
+
+               let angle = 0.0;
+
+               if (flipX) {
+                   angle = -Math.atan2(endMatrix[1][0], endMatrix[0][0]);
+               } else {
+                   angle = Math.atan2(-endMatrix[1][0], -endMatrix[0][0]);
+               }
+
+               angle += this.imageAngle;
+
+               ctx.save();
+               ctx.translate(x1, y1);
+               if (flipX) {
+                   ctx.scale(-1, 1);
+               }
+               ctx.rotate(angle);
+
+               ctx.drawImage(
+                   this.image,
+                   this.imageOffset[0],
+                   this.imageOffset[1],
+                   this.len,
+                   this.len
+               );
+
+               ctx.restore();
+           }
            if (this.drawCallback) {
                this.drawCallback();
            } else {
@@ -424,57 +465,16 @@
    head.angle = Math.PI / 2;
    head.minAngle = -2;
    head.maxAngle = 2;
+   head.image = new Image();
+   head.image.src = "./head.png"
+   head.imageOffset = [-40, -40];
+   head.imageAngle = -0.8;
 
    let jump = false;
 
    document.addEventListener('mousedown', () => {
        jump = true;
    });
-
-   head.drawCallback = () => {
-       const startMatrix = head.startPointMatrix();
-       const endMatrix = head.endEffectorMatrix();
-       const p1 = [startMatrix[0][2], startMatrix[1][2]];
-       const p2 = [endMatrix[0][2], endMatrix[1][2]];
-       const angle = math.atan2(p2[1] - p1[1], p2[0] - p1[0]);
-       const midpoint = math.add(p1, math.multiply(math.subtract(p2, p1), 0.5));
-       const radius = math.norm(math.subtract(p2, p1)) / 2;
-       const upVector = math.subtract(p2, p1);
-       const rightVector = cat.flipX ? [-upVector[1], upVector[0]] : [upVector[1], -upVector[0]];
-
-       // Draw head
-       ctx.beginPath();
-       ctx.arc(midpoint[0], midpoint[1], radius, 0, Math.PI * 2);
-       ctx.fillStyle = '#555555';
-       ctx.fill();
-
-       // Draw nose
-       const x = midpoint[0] + 0.2 * upVector[0] + 0.35 * rightVector[0];
-       const y = midpoint[1] + 0.2 * upVector[1] + 0.35 * rightVector[1];
-       ctx.beginPath();
-       ctx.arc(x, y, 20, 0, Math.PI * 2);
-       ctx.fillStyle = '#555555';
-       ctx.fill();
-
-       // Ears triangle
-       const ears = [
-           {up: 0.9640970432815996, right: -0.0978743640371591},
-           {up: 1.1149200822997452, right: -0.31560966411808533},
-           {up: 0.820865001658949, right: -0.38008143739395395}
-       ];
-       ctx.beginPath();
-       ears.forEach((ear, idx) => {
-           const x = p1[0] + ear.up * upVector[0] + ear.right * rightVector[0];
-           const y = p1[1] + ear.up * upVector[1] + ear.right * rightVector[1];
-           if (idx === 0) {
-               ctx.moveTo(x, y);
-           } else {
-               ctx.lineTo(x, y);
-           }
-       });
-       ctx.fillStyle = '#555555';
-       ctx.fill();
-   };
 
    const ear = new Bone();
    ear.setParent(head);
@@ -665,16 +665,16 @@
 
        const angleBlendFac = deltaTime * 0.01;
        if (cat.flipX) {
-           let angleTarget = -math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) + 1.0;
+           let angleTarget = -math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]);
            head.angle = (angleTarget * angleBlendFac) + (head.angle * (1.0 - angleBlendFac)) ;
            head.angle += Math.cos(-performance.now() / 500) * 0.1;
            head.angle = head.angle % Math.PI;
        }
        else {
-           let angleTarget = math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]) + 4.0;
+           let angleTarget = math.atan2(mouseHeadDiff[1], mouseHeadDiff[0]);
            head.angle = angleTarget;
            head.angle += Math.cos(-performance.now() / 500) * 0.1;
-           head.angle = head.angle % Math.PI;
+           head.angle = head.angle % Math.PI * 2;
        }
 
        head.applyConstraints();
@@ -690,7 +690,7 @@
        ctx.beginPath();
        ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
        ctx.fillStyle = 'green';
-       ctx.fill();
+   ctx.fill();
 
        lastTime = currentTime;
        requestAnimationFrame(update);
