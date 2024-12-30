@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Rotation and Translation Matrix Demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.19/dist/katex.min.css" integrity="sha384-7lU0muIg/i1plk7MgygDUp3/bNRA65orrBub4/OSWHECgwEsY83HaS1x3bljA/XV" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.19/dist/katex.min.js" integrity="sha384-RdymN7NRJ+XoyeRY4185zXaxq9QWOOx3O7beyyrRK4KQZrPlCDQQpCu95FoCGPAE" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.19/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous"></script>
+
+    <style>
+      body {
+          display: flex;
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+          height: 100vh;
+      }
+      #controls {
+          width: 50%;
+          padding: 20px;
+          box-sizing: border-box;
+      }
+      #canvas-container {
+          width: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f0f0f0;
+      }
+      canvas {
+          border: 1px solid #ccc;
+      }
+      .matrix {
+          margin-bottom: 20px;
+      }
+      input {
+          margin-left: 0;
+          padding: 8px;
+
+      }
+      #math {
+          margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <div id="math"></div>
+      <div class="matrix">
+        <label>
+          Rotation Angle (\(\theta\) in degrees):<br/>
+          <input type="number" id="rotationAngle" value="-1.57">
+        </label>
+      </div>
+      <div class="matrix">
+        <label>
+          Translation (\(x\), \(y\)):<br/>
+          <input type="number" id="translateX" value="0">
+          <input type="number" id="translateY" value="0">
+        </label>
+      </div>
+      <div id="equation"></div>
+    </div>
+    <div id="canvas-container">
+      <canvas id="visualization" width="400" height="400"></canvas>
+    </div>
+
+    <script>
+      const rotationInput = document.getElementById('rotationAngle');
+      const translateXInput = document.getElementById('translateX');
+      const translateYInput = document.getElementById('translateY');
+      const mathDiv = document.getElementById('math');
+      const equationDiv = document.getElementById('equation');
+      const canvas = document.getElementById('visualization');
+      const ctx = canvas.getContext('2d');
+
+      const drawVisualization = (rotationAngle, translateX, translateY) => {
+          const theta = rotationAngle;
+
+          const rotationMatrix = [
+              [Math.cos(theta), -Math.sin(theta), 0],
+              [Math.sin(theta), Math.cos(theta), 0],
+              [0, 0, 1]
+          ];
+
+          const translationMatrix = [
+              [1, 0, translateX],
+              [0, 1, translateY],
+              [0, 0, 1]
+          ];
+
+          const originalVector = [100, 0, 1];
+
+          const rotatedVector = [
+              originalVector[0] * rotationMatrix[0][0] + originalVector[1] * rotationMatrix[0][1] + originalVector[2] * rotationMatrix[0][2],
+              originalVector[0] * rotationMatrix[1][0] + originalVector[1] * rotationMatrix[1][1] + originalVector[2] * rotationMatrix[1][2],
+              1
+          ];
+
+          const transformedVector = [
+              rotatedVector[0] * translationMatrix[0][0] + rotatedVector[1] * translationMatrix[0][1] + rotatedVector[2] * translationMatrix[0][2],
+              rotatedVector[0] * translationMatrix[1][0] + rotatedVector[1] * translationMatrix[1][1] + rotatedVector[2] * translationMatrix[1][2],
+              1
+          ];
+
+          // Update math visualization
+          mathDiv.innerHTML = katex.renderToString(`
+                \\begin{aligned}
+                    v &= \\begin{bmatrix} 100 \\\\ 0 \\\\ 1 \\end{bmatrix} \\\\
+                    R &= \\begin{bmatrix}
+                        \\cos\\theta & -\\sin\\theta & 0 \\\\
+                        \\sin\\theta & \\cos\\theta & 0 \\\\
+                        0 & 0 & 1
+                    \\end{bmatrix} \\\\
+                    T &= \\begin{bmatrix}
+                        1 & 0 & ${translateX} \\\\
+                        0 & 1 & ${translateY} \\\\
+                        0 & 0 & 1
+                    \\end{bmatrix} \\\\
+                \\end{aligned}
+            `);
+
+          // Update math visualization
+          equationDiv.innerHTML = katex.renderToString(`
+                \\begin{aligned}
+                    v' &= T \\cdot R \\cdot v = \\begin{bmatrix}
+                        ${transformedVector[0].toFixed(2)} \\\\
+                        ${transformedVector[1].toFixed(2)} \\\\
+                        1
+                    \\end{bmatrix}
+                \\end{aligned}
+            `);
+
+
+          // Draw vector
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.save();
+          ctx.translate(canvas.width / 2, canvas.height / 2);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(originalVector[0], originalVector[1]);
+          ctx.strokeStyle = 'blue';
+          ctx.stroke();
+
+          // Draw point for original vector
+          ctx.beginPath();
+          ctx.arc(originalVector[0], originalVector[1], 5, 0, 2 * Math.PI);
+          ctx.fillStyle = 'blue';
+          ctx.fill();
+
+
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(transformedVector[0], transformedVector[1]);
+          ctx.strokeStyle = 'red';
+          ctx.stroke();
+
+          // Draw point for transformed vector
+          ctx.beginPath();
+          ctx.arc(transformedVector[0], transformedVector[1], 3, 0, 2 * Math.PI);
+          ctx.fillStyle = 'red';
+          ctx.fill();
+
+
+          ctx.restore();
+      };
+
+      const updateVisualization = () => {
+          const rotationAngle = parseFloat(rotationInput.value) || 0;
+          const translateX = parseFloat(translateXInput.value) || 0;
+          const translateY = parseFloat(translateYInput.value) || 0;
+          drawVisualization(rotationAngle, translateX, translateY);
+      };
+
+      rotationInput.addEventListener('input', updateVisualization);
+      translateXInput.addEventListener('input', updateVisualization);
+      translateYInput.addEventListener('input', updateVisualization);
+
+      // Initial render
+      updateVisualization();
+
+      document.addEventListener("DOMContentLoaded", function() {
+          renderMathInElement(document.body, {
+              // customised options
+              // • auto-render specific keys, e.g.:
+              delimiters: [
+                  {left: '$$', right: '$$', display: true},
+                  {left: '$', right: '$', display: false},
+                  {left: '\\(', right: '\\)', display: false},
+                  {left: '\\[', right: '\\]', display: true}
+              ],
+              // • rendering keys, e.g.:
+              throwOnError : false
+          });
+      });
+    </script>
+  </body>
+</html>
