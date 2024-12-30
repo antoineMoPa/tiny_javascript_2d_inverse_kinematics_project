@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matrix Multiplication Visualization</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .matrix {
+      display: grid;
+      grid-template-columns: repeat(3, 50px);
+      gap: 5px;
+      margin: 10px;
+    }
+    .cell {
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid black;
+      font-size: 18px;
+      position: relative;
+    }
+    .highlight-row {
+      background-color: rgba(255, 0, 0, 0.2);
+    }
+    .highlight-column {
+      background-color: rgba(0, 0, 255, 0.2);
+    }
+    .highlight-cell {
+      background-color: yellow;
+    }
+    .highlight-current {
+      border: 2px solid green;
+    }
+    .container {
+      display: flex;
+      align-items: flex-start;
+    }
+    .result {
+      margin-left: 20px;
+    }
+    #currentOperation {
+      margin: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #controlButtons {
+      margin: 20px;
+    }
+    #multiplicationSymbol {
+      font-size: 30px;
+      margin: 0 10px;
+      margin-top: 80px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Matrix Multiplication Visualization</h1>
+  <div id="currentOperation">Current Operation: </div>
+  <div id="controlButtons">
+    <button id="pauseButton">Pause</button>
+    <button id="restartButton">Restart</button>
+  </div>
+  <div class="container">
+    <div id="matrixA" class="matrix"></div>
+    <div id="multiplicationSymbol">×</div>
+    <div id="matrixB" class="matrix"></div>
+  </div>
+  <div class="container">
+    <div id="resultContainer">
+      <div id="matrixResult" class="matrix result"></div>
+    </div>
+  </div>
+
+  <script>
+    const matrixA = [
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9]
+    ];
+
+    const matrixB = [
+      [9, 8, 7],
+      [6, 5, 4],
+      [3, 2, 1]
+    ];
+
+    const matrixResult = [
+      [0, 0, 0],
+      [0, 0, 0],
+      [0, 0, 0]
+    ];
+
+    let isPaused = false;
+    let animationTimeout;
+
+    function createMatrixHTML(matrix, containerId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      matrix.forEach((row, rowIndex) => {
+        row.forEach((cell, colIndex) => {
+          const div = document.createElement('div');
+          div.classList.add('cell');
+          div.dataset.row = rowIndex;
+          div.dataset.col = colIndex;
+          div.textContent = cell;
+          container.appendChild(div);
+        });
+      });
+    }
+
+    function highlightCells(row, col, k) {
+      document.querySelectorAll('.highlight-row, .highlight-column, .highlight-cell, .highlight-current')
+        .forEach(el => el.classList.remove('highlight-row', 'highlight-column', 'highlight-cell', 'highlight-current'));
+
+      document.querySelectorAll(`#matrixA .cell[data-row='${row}']`)
+        .forEach(el => el.classList.add('highlight-row'));
+
+      document.querySelectorAll(`#matrixB .cell[data-col='${col}']`)
+        .forEach(el => el.classList.add('highlight-column'));
+
+      const resultCell = document.querySelector(`#matrixResult .cell[data-row='${row}'][data-col='${col}']`);
+      if (resultCell) {
+        resultCell.classList.add('highlight-cell');
+      }
+
+      const currentACell = document.querySelector(`#matrixA .cell[data-row='${row}'][data-col='${k}']`);
+      const currentBCell = document.querySelector(`#matrixB .cell[data-row='${k}'][data-col='${col}']`);
+
+      if (currentACell) {
+        currentACell.classList.add('highlight-current');
+      }
+
+      if (currentBCell) {
+        currentBCell.classList.add('highlight-current');
+      }
+    }
+
+    async function animateMultiplication() {
+      const operationDisplay = document.getElementById('currentOperation');
+
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          highlightCells(i, j);
+          let sum = 0;
+          for (let k = 0; k < 3; k++) {
+            const a = matrixA[i][k];
+            const b = matrixB[k][j];
+            highlightCells(i, j, k);
+            sum += a * b;
+            operationDisplay.textContent = `Current Operation: ${a} * ${b} + ... = ${sum}`;
+            await pauseAwareTimeout(1000);
+          }
+          matrixResult[i][j] = sum;
+          createMatrixHTML(matrixResult, 'matrixResult');
+          highlightCells(i, j);
+          await pauseAwareTimeout(1000);
+        }
+      }
+      operationDisplay.textContent = 'Multiplication Complete! Restarting...';
+      setTimeout(() => restartAnimation(), 2000);
+    }
+
+    function pauseAwareTimeout(delay) {
+      return new Promise(resolve => {
+        function checkPause() {
+          if (!isPaused) {
+            animationTimeout = setTimeout(resolve, delay);
+          } else {
+            setTimeout(checkPause, 100);
+          }
+        }
+        checkPause();
+      });
+    }
+
+    function restartAnimation() {
+      matrixResult.forEach(row => row.fill(0));
+      createMatrixHTML(matrixResult, 'matrixResult');
+      animateMultiplication();
+    }
+
+    document.getElementById('pauseButton').addEventListener('click', () => {
+      isPaused = !isPaused;
+      document.getElementById('pauseButton').textContent = isPaused ? 'Resume' : 'Pause';
+    });
+
+    document.getElementById('restartButton').addEventListener('click', () => {
+      clearTimeout(animationTimeout);
+      restartAnimation();
+    });
+
+    createMatrixHTML(matrixA, 'matrixA');
+    createMatrixHTML(matrixB, 'matrixB');
+    createMatrixHTML(matrixResult, 'matrixResult');
+    animateMultiplication();
+  </script>
+  <p>
+    See also: <a href="./index.html" style="clear: both">Transform Matrices</a>
+  </p>
+</body>
+</html>

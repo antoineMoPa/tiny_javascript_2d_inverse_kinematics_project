@@ -61,6 +61,7 @@
         </label>
       </div>
       <div id="equation"></div>
+      See also: <a href="./matrix_multiplication.html" style="clear: both">Matrix Multiplication</a>
     </div>
     <div id="canvas-container">
       <canvas id="visualization" width="400" height="400"></canvas>
@@ -89,6 +90,8 @@
               [0, 1, translateY],
               [0, 0, 1]
           ];
+
+          console.log({ rotationMatrix, translationMatrix });
 
           const originalVector = [100, 0, 1];
 

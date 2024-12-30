@@ -61,9 +61,9 @@ class="w-40 h-40 rounded-full float-left mr-10">
 
 <div class="clear-both"></div>
 
-## Petit mot sur mon employeur
+## Qu'est-ce que Lumen5?
 Lumen5 est une plateforme de création de vidéos
-pour les communicateurs B2B (business to business) basée à Vancouver.
+pour les communicateurs B2B basée à Vancouver.
 
 
 ---
@@ -91,19 +91,9 @@ Here is another comment.
 transition: slide-up
 ---
 
-# 📚 **Survol des matrices en 5 minutes** 
+# 📚 **Intro aux matrices** 
 
-Intro aux matrices
-
-Qu'est-ce qu'une matrice?
-
-Les matrices sont des objects mathématiques.
-
-Elles sont composées de lignes et de colonnes.
-
-En termes de développeur: une table.
-
-Exemple de matrice 3x3:
+Voici un exemple de matrice:
 
 $M = \begin{bmatrix}
 1 & 2 & 3\\
@@ -111,13 +101,17 @@ $M = \begin{bmatrix}
 7 & 8 & 9\\
 \end{bmatrix}$
 
+Les matrices sont des objects mathématiques.
+
+Elles sont composées de lignes et de colonnes.
+
+En termes de développeur: une table.
+
 ---
 transition: slide-up
 ---
 
-# 📚 **Survol des matrices en 5 minutes**
-
-Produit scalaire / dot product 
+# 📚 **Multiplication de matrices**
 
 On multiplie les lignes de m1 par les colonnes de m2.
 
@@ -144,7 +138,7 @@ a \cdot j + b \cdot m + c \cdot p & ... & ...\\
 transition: slide-up
 ---
 
-# 📚 **Survol des matrices en 5 minutes**
+# 📚 **Identité**
 
 Identité
 
