@@ -76,7 +76,7 @@ transition: fade-out
 
 À l'agenda:
 
-- 📚 **Survol des matrices en 5 minutes** - Produit, Identité, matrices de transformation.
+- 📚 **Survol des matrices en 5 minutes** - Produit, Identité, Transformation.
 - 🤖 **Représentation des joints d'un robot** - Application des matrices
 - 🦾 **Cinématique inverse** - Pseudo inverse.
 - 🎥 **Applications en jeux vidéo et cinéma** - Très pratique, la cinématique inverse.
@@ -134,6 +134,8 @@ a \cdot j + b \cdot m + c \cdot p & ... & ...\\
 ... & ... & ... \\
 \end{bmatrix}$
 
+[matrix_multiplication.html](https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/matrix_demos/matrix_multiplication.html)
+
 ---
 transition: slide-up
 ---
@@ -158,9 +160,12 @@ $M_1 \cdot I = M_1$
 transition: slide-up
 ---
 
-# 📚 **Survol des matrices en 5 minutes** - Matrices de transformation
+# 📚 Matrices de transformation
+
+Les matrices de transformation permettent de déplacer des vecteurs.
 
 
+[Démo matrices de transformation](https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/matrix_demos/index.html)
 
 
 
