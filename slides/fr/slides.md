@@ -140,6 +140,19 @@ a \cdot j + b \cdot m + c \cdot p & ... & ...\\
 transition: slide-up
 ---
 
+
+# 📚 Matrices de transformation
+
+Les matrices de transformation permettent de déplacer des vecteurs.
+
+
+[Démo matrices de transformation](https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/matrix_demos/index.html)
+
+---
+transition: slide-up
+---
+
+
 # 📚 **Identité**
 
 Identité
@@ -154,19 +167,6 @@ $I = \begin{bmatrix}
 
 
 $M_1 \cdot I = M_1$
-
-
----
-transition: slide-up
----
-
-# 📚 Matrices de transformation
-
-Les matrices de transformation permettent de déplacer des vecteurs.
-
-
-[Démo matrices de transformation](https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/matrix_demos/index.html)
-
 
 
 <PoweredBySlidev mt-10 />
