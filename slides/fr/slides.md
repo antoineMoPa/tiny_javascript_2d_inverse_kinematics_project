@@ -169,4 +169,90 @@ $I = \begin{bmatrix}
 $M_1 \cdot I = M_1$
 
 
+---
+transition: slide-up
+---
+
+# 📚 **Types de joints**
+
+Les 2 types de joints les plus utilisés en robotique.
+
+<div class="flex justify-center">
+<img src="/images/types_joints.svg" alt="image" style="max-height:400px"/>
+</div>
+
+---
+transition: slide-up
+---
+
+# 📚 **Représentation des joints d'un robot**
+
+Chaque joint possède sa matrice de transformation.
+
+![image](./images/joints_robot.svg)
+
+
+---
+
+# 📚 **Matrice de transformation locale**
+
+Exemple de construction d'une matrice pour un joint pivot en 2D:
+
+```
+matriceJoint () {
+    const c = Math.cos(this.angle);
+    const s = Math.sin(this.angle);
+    const x = this.len * c;
+    const y = this.len * s;
+
+    // Matrice de rotation sur l'axe des Z + Transformation
+    return [
+        [c, -s, x],
+        [s, c, y],
+        [0, 0, 1]
+    ];
+}
+```
+
+---
+
+# 📚 **Matrice de transformation globale**
+
+Exemple de construction d'une matrice pour un joint:
+
+```
+transformMatrix() {
+    const T = this.matriceJoint();
+    cont P = this.parent.transformMatrix();
+    return math.multiply(P, T);
+}
+```
+
+---
+
+# 📚 **Cinématique inverse**
+
+Comment placer les joints pour que l'effecteur terminal atteigne son objectif?
+       
+
+<div class="flex justify-center">
+<img src="/images/cine_inverse.svg" alt="image" style="max-height:400px"/>
+</div>
+
+---
+
+# 📚 **Cinématique inverse - Algo**
+
+Comment placer les joints pour que l'effecteur terminal atteigne son objectif?
+       
+Répeter jusqu'à ce que l'erreur soit assez petite:
+1. Déterminer la matrice jacobienne.
+   - L'impact d'un changement d'angle de chaque joint sur la position de l'effecteur terminal.
+2. Déterminer la pseudo-inverse de la jacobienne `math.pinv()`.
+3. Modifier les angles en fonction de la pseudo-inverse.
+
+
+
+---
+
 <PoweredBySlidev mt-10 />
