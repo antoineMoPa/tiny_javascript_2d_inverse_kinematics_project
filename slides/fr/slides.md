@@ -22,10 +22,6 @@ mdc: true
 
 matrices, robotique et animation 2D
 
-<div @click="$slidev.nav.next" class="mt-12 py-1" hover:bg="white op-10">
-  Press Space for next page <carbon:arrow-right />
-</div>
-
 <div class="abs-br m-6 text-xl">
   <button @click="$slidev.nav.openInEditor" title="Open in Editor" class="slidev-icon-btn">
     <carbon:edit />
@@ -101,11 +97,17 @@ $M = \begin{bmatrix}
 7 & 8 & 9\\
 \end{bmatrix}$
 
-Les matrices sont des objects mathématiques.
-
-Elles sont composées de lignes et de colonnes.
-
 En termes de développeur: une table.
+
+
+```
+const M = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+```
+
 
 ---
 transition: slide-up
@@ -115,26 +117,40 @@ transition: slide-up
 
 On multiplie les lignes de m1 par les colonnes de m2.
 
-$M_1 = \begin{bmatrix}
+$
+\begin{aligned}
+M_1 = \begin{bmatrix}
 a & b & c\\
 d & e & f\\
 g & h & i\\
-\end{bmatrix}$
-
-
-$M_2 = \begin{bmatrix}
+\end{bmatrix}
+,
+&&
+M_2 = \begin{bmatrix}
 j & k & l\\
 m & n & o\\
 p & q & r\\
-\end{bmatrix}$
-
-$M_3 = M_1 \cdot M_2 = \begin{bmatrix}
+\end{bmatrix}
+,
+&&
+M_3 = M_1 \cdot M_2 = \begin{bmatrix}
 a \cdot j + b \cdot m + c \cdot p & ... & ...\\
 ... & ... & ... \\
 ... & ... & ... \\
-\end{bmatrix}$
+\end{bmatrix}
+\end{aligned}
+$
+
+<br/>
 
 [matrix_multiplication.html](https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/matrix_demos/matrix_multiplication.html)
+
+<br/>
+
+Avec math.js:
+```
+math.multiply(M1, M2);
+```
 
 ---
 transition: slide-up
@@ -143,8 +159,13 @@ transition: slide-up
 
 # 📚 Matrices de transformation
 
+
 Les matrices de transformation permettent de déplacer des vecteurs.
 
+<img src="/images/transform_matrix.svg" alt="image" style="max-height:300px" class="m-auto"/>
+
+
+<br/>
 
 [Démo matrices de transformation](https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/matrix_demos/index.html)
 
@@ -155,9 +176,11 @@ transition: slide-up
 
 # 📚 **Identité**
 
-Identité
+<br/>
 
 N'importe quelle matrice multipliée par l'identité va en resortir intacte.
+
+<br/>
 
 $I = \begin{bmatrix}
 1 & 0 & 0\\
@@ -165,6 +188,7 @@ $I = \begin{bmatrix}
 0 & 0 & 1\\
 \end{bmatrix}$
 
+<br/>
 
 $M_1 \cdot I = M_1$
 
@@ -180,6 +204,18 @@ Les 2 types de joints les plus utilisés en robotique.
 <div class="flex justify-center">
 <img src="/images/types_joints.svg" alt="image" style="max-height:400px"/>
 </div>
+
+---
+
+
+# 📚 **Exemple réel**
+
+
+<div class="flex justify-center">
+<img src="/images/robots_arms.jpg" alt="image" style="max-height:400px"/>
+</div>
+
+
 
 ---
 transition: slide-up
@@ -246,11 +282,26 @@ Comment placer les joints pour que l'effecteur terminal atteigne son objectif?
 Comment placer les joints pour que l'effecteur terminal atteigne son objectif?
        
 Répeter jusqu'à ce que l'erreur soit assez petite:
-1. Déterminer la matrice jacobienne.
-   - L'impact d'un changement d'angle de chaque joint sur la position de l'effecteur terminal.
+1. Trouver l'impact d'un changement d'angle de chaque joint sur la position de l'effecteur terminal.
+   - (On appelle ceci la matrice jacobienne)
 2. Déterminer la pseudo-inverse de la jacobienne `math.pinv()`.
-3. Modifier les angles en fonction de la pseudo-inverse.
+4. Calculer l'erreur actuelle de l'effecteur terminal.
+3. Modifier les angles de façon à minimiser l'erreur.
 
+
+---
+
+# 📚 **Démo**
+
+* Chaque patte est l'équivalent d'un bras robotique avec deux joints révoluts.
+* On déplace le `target` de chaque patte de façon successive pour créer une animation de marche.
+
+
+<div class="flex justify-center">
+<img src="/images/cat.svg" alt="image" style="max-height:300px"/>
+</div>
+
+https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/
 
 
 ---
