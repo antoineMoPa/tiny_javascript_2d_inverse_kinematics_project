@@ -355,10 +355,10 @@ function update() {
 
     bones.forEach(b => b.draw());
 
-    ctx.beginPath();
-    ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
-    ctx.fillStyle = 'green';
-    ctx.fill();
+    // ctx.beginPath();
+    // ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);
+    // ctx.fillStyle = 'green';
+    // ctx.fill();
 
     lastTime = currentTime;
     requestAnimationFrame(update);
