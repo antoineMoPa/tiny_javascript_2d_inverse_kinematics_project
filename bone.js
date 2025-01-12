@@ -321,7 +321,9 @@ class Bone {
         ctx.rotate(angle + this.imageAngle);
         ctx.translate(this.imageOffset[0], this.imageOffset[1]);
         ctx.scale(this.imageScale, this.imageScale);
-        ctx.drawImage(this._image, 0, 0, this.len, this.len);
+        const imageAspectRatio = this._image.width / this._image.height;
+
+        ctx.drawImage(this._image, 0, 0, this.len, this.len / imageAspectRatio);
 
         ctx.restore();
     }
@@ -329,9 +331,9 @@ class Bone {
     draw() {
         if (this._image) {
             this.drawImage();
+        } else {
+            this.drawLine();
         }
-
-        this.drawLine();
     }
 
     lastChild() {

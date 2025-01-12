@@ -39,6 +39,10 @@ body.angle = Math.PI - 0.1;
 body.len = 100;
 body.noIk = true;
 body.flipX = false;
+body.image = "./images/body.png";
+body.imageOffset = [-170, -100];
+body.imageAngle = 0;
+body.imageScale = 2.3;
 body.setParent(cat);
 
 const backBody = new Bone();
@@ -211,9 +215,6 @@ function moveLegToNearestGridSpot(leg, offset) {
 let lastTime = performance.now();
 
 function update() {
-    //head.imageOffset[1] = -mouse[1];
-    //console.log(head.imageOffset[1]);
-
     const currentTime = performance.now();
     const deltaTime = currentTime - lastTime;
 
