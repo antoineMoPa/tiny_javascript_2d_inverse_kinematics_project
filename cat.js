@@ -40,8 +40,8 @@ body.len = 100;
 body.noIk = true;
 body.flipX = false;
 body.image = "./images/body.png";
-body.imageOffset = [-170, -100];
-body.imageAngle = 0;
+body.imageOffset = [-50, -30];
+body.imageAngle = Math.PI;
 body.imageScale = 2.3;
 body.setParent(cat);
 
@@ -58,37 +58,77 @@ const backLeg1 = new Bone();
 backLeg1.setParent(backBody);
 backLeg1.position[0] = 0;
 backLeg1.position[1] = 0;
-const backLeg1Foot = new Bone();
+backLeg1.image = "./images/leg.png";
+backLeg1.imageOffset = [-30, -40];
+backLeg1.imageAngle = 3 * Math.PI / 2;
+backLeg1.imageScale = 0.6;
 
+const backLeg1Foot = new Bone();
 backLeg1Foot.setParent(backLeg1);
+backLeg1Foot.image = "./images/paw.png";
+backLeg1Foot.imageOffset = [-20, -40];
+backLeg1Foot.imageAngle = -0.5 * Math.PI;
+backLeg1Foot.imageScale = 0.4;
 
 
 const backLeg2 = new Bone();
 backLeg2.setParent(backBody);
 backLeg2.position[0] = 0;
 backLeg2.position[1] = 0;
+backLeg2.image = "./images/leg.png";
+backLeg2.imageOffset = [-30, -40];
+backLeg2.imageAngle = 3 * Math.PI / 2;
+backLeg2.imageScale = 0.6;
+
+
 const backLeg2Foot = new Bone();
 backLeg2Foot.setParent(backLeg2);
+backLeg2Foot.image = "./images/paw.png";
+backLeg2Foot.imageOffset = [-20, -40];
+backLeg2Foot.imageAngle = -0.5 * Math.PI;
+backLeg2Foot.imageScale = 0.4;
+
 
 const frontLeg1 = new Bone();
 frontLeg1.angle = -Math.PI / 2;
 frontLeg1.setParent(body);
 frontLeg1.position[1] = 0;
+frontLeg1.image = "./images/leg.png";
+frontLeg1.imageOffset = [00, -20];
+frontLeg1.imageAngle = 3 * Math.PI / 2;
+frontLeg1.imageScale = 0.6;
+
+
 const frontLeg1Foot = new Bone();
 frontLeg1Foot.setParent(frontLeg1);
+frontLeg1Foot.image = "./images/paw.png";
+frontLeg1Foot.imageOffset = [-10, -70];
+frontLeg1Foot.imageAngle = -1 / 2 * Math.PI - 0.2;
+frontLeg1Foot.imageScale = 0.4;
+
 
 const frontLeg2 = new Bone();
 frontLeg2.angle = -Math.PI / 2;
 frontLeg2.setParent(body);
 frontLeg2.position[1] = 0;
+frontLeg2.image = "./images/leg.png";
+frontLeg2.imageOffset = [00, -20];
+frontLeg2.imageAngle = 3 * Math.PI / 2;
+frontLeg2.imageScale = 0.6;
+
 const frontLeg2Foot = new Bone();
 frontLeg2Foot.setParent(frontLeg2);
+frontLeg2Foot.image = "./images/paw.png";
+frontLeg2Foot.imageOffset = [-10, -70];
+frontLeg2Foot.imageAngle = -1 / 2 * Math.PI - 0.2;
+frontLeg2Foot.imageScale = 0.4;
+
 
 const head = new Bone();
 head.image = "./images/head.png";
 head.imageOffset = [-60,-60];
-head.imageAngle = -1.0;
-head.imageScale = 1.2;
+head.imageAngle = -1.0 + Math.PI;
+head.imageScale = 1.5;
 head.setParent(body);
 head.len = 80;
 head.minAngle = -2;

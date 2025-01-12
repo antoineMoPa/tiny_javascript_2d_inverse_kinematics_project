@@ -299,6 +299,16 @@ class Bone {
         this._image.src = url;
     }
 
+    globalAngle() {
+        let angle = this.angle;
+        let bone = this.parent;
+        while (bone) {
+            angle += bone.angle;
+            bone = bone.parent;
+        }
+        return angle;
+    }
+
     drawImage() {
         const startMatrix = this.startPointMatrix();
         const endMatrix = this.endEffectorMatrix();
@@ -306,8 +316,7 @@ class Bone {
         const end = [endMatrix[0][2], endMatrix[1][2]];
         const midPoint = math.multiply(0.5, math.add(start, end));
 
-        let angle = this.angle;
-
+        let angle = this.globalAngle();
         const rootParent = this.rootParent();
 
         ctx.save();
@@ -331,7 +340,8 @@ class Bone {
     draw() {
         if (this._image) {
             this.drawImage();
-        } else {
+        }
+        if (DRAW_GIZMOS) {
             this.drawLine();
         }
     }
