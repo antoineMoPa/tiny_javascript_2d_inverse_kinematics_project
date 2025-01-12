@@ -37,6 +37,7 @@
   <img src="./images/qr.svg" class="qrcode" onmousedown="event.target.remove()"/>
   <script src="./math.min.js"></script>
   <canvas id="animationCanvas"></canvas>
+  <script src="bone.js"></script>
   <script>
    const canvas = document.getElementById('animationCanvas');
    const ctx = canvas.getContext('2d');
@@ -60,315 +61,6 @@
 
    function pinv(matrix) {
        return math.pinv(matrix); // Math.js pseudo-inverse
-   }
-
-   DRAW_GIZMOS = false;
-
-   class Bone {
-       parent = null;
-       child = null;
-       position = [0,0];
-       acceleration = [0, 0];
-       len = 100;
-       angle = 0.4 * Math.PI;
-       minAngle = -2.0 * Math.PI;
-       maxAngle = 2.0 * Math.PI;
-       drawCallback = null;
-       stableAngle = null;
-       noIk = false;
-
-       state = [];
-       relaxedState = null;
-
-       constructor() {
-           bones.push(this);
-       }
-
-       saveState() {
-           return {
-               angle: this.angle,
-           };
-       }
-
-       saveRelaxedState() {
-           this.relaxedState = this.saveState();
-       }
-
-       restoreRelaxedState() {
-           let bone = this;
-
-           do {
-               bone.setState(bone.relaxedState);
-               bone = bone.parent;
-           } while (bone && !bone.noIk);
-       }
-
-       setState(state) {
-           this.angle = state.angle;
-       }
-
-       pushState() {
-           this.state.push(this.saveState());
-       }
-
-       popState() {
-           if (this.state.length == 0) {
-               throw new Error("nothing to pop");
-           }
-           this.setState(this.state.pop());
-       }
-
-       setParent(parent) {
-           this.parent = parent;
-           parent.child = this;
-       }
-
-       applyConstraints() {
-           if (this.angle < this.minAngle) {
-               this.angle = this.minAngle;
-           }
-           if (this.angle > this.maxAngle) {
-               this.angle = this.maxAngle;
-           }
-       }
-
-       localEffectorMatrix(deltaAngle = 0) {
-           const c = Math.cos(this.angle + deltaAngle);
-           const s = Math.sin(this.angle + deltaAngle);
-           const x = this.len * c;
-           const y = this.len * s;
-
-           return [
-                [c, -s, x],
-                [s, c, y],
-                [0, 0, 1]
-           ];
-       }
-
-       parentMatrix(deltaAngle = 0) {
-           if (this.parent) {
-               return this.parent.transformMatrix(deltaAngle);
-           }
-           else {
-               return [
-                   [1, 0, 0],
-                   [0, 1, 0],
-                   [0, 0, 1]
-               ];
-           }
-       }
-
-       offsetMatrix() {
-           return [
-               [1, 0, this.position[0]],
-               [0, 1, this.position[1]],
-               [0, 0, 1]
-           ];
-       }
-
-       transformMatrix(deltaAngle = 0) {
-           // todo: offset is not working
-           const T = this.localEffectorMatrix(deltaAngle);
-
-           return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T);
-       }
-
-       startPointMatrix(deltaAngle = 0) {
-           const rootParent = this.rootParent();
-           const T1 = [
-               [1, 0, -rootParent.position[0]],
-               [0, 1, -rootParent.position[1]],
-               [0, 0, 1]
-           ];
-           const T2 = [
-               [1, 0, rootParent.position[0]],
-               [0, 1, rootParent.position[1]],
-               [0, 0, 1]
-           ];
-           const S = [
-               [rootParent.flipX? -1 : 1, 0, 0],
-               [0, 1, 0],
-               [0, 0, 1]
-           ];
-
-           let m = math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle));
-           m = math.multiply(T1, m);
-           m = math.multiply(S, m);
-           m = math.multiply(T2, m);
-
-           return m;
-       }
-
-       endEffectorMatrix(deltaAngle = 0) {
-           const rootParent = this.rootParent();
-           const T1 = [
-               [1, 0, -rootParent.position[0]],
-               [0, 1, -rootParent.position[1]],
-               [0, 0, 1]
-           ];
-           const T2 = [
-               [1, 0, rootParent.position[0]],
-               [0, 1, rootParent.position[1]],
-               [0, 0, 1]
-           ];
-           const S = [
-               [rootParent.flipX? -1 : 1, 0, 0],
-               [0, 1, 0],
-               [0, 0, 1]
-           ];
-
-           let m = this.transformMatrix(deltaAngle);
-           m = math.multiply(T1, m);
-           m = math.multiply(S, m);
-           m = math.multiply(T2, m);
-
-           return m;
-       }
-
-       positions() {
-           const startMatrix = this.startPointMatrix();
-           const endMatrix = this.endEffectorMatrix();
-           const start = [startMatrix[0][2], startMatrix[1][2]];
-           const end = [endMatrix[0][2], endMatrix[1][2]];
-
-           return { start, end };
-       }
-
-       rootParent() {
-           let bone = this;
-           while (bone.parent) {
-               bone = bone.parent;
-           }
-           return bone;
-       }
-
-       update(deltaTime) {
-           const damping = 0.99;
-           if (math.norm(this.acceleration) > 0.001){
-               //this.acceleration = math.multiply(this.acceleration, damping);
-               this.position = math.add(this.position, math.multiply(this.acceleration, deltaTime));
-           }
-
-           if (this.stableAngle) {
-               const factor = 0.005 * deltaTime;
-               this.angle = this.angle * (1.0 - factor) + this.stableAngle * factor;
-           }
-       }
-
-       ik(target) {
-           const MAX_IT = 20;
-           for (let i = 0; i < MAX_IT; i++) {
-               const matrices = [];
-               const matricesPlusDelta = [];
-               const matricesMinusDelta = [];
-               const derivativeMatrix = [];
-
-               let bone = this;
-
-               while (bone) {
-                   matrices.push(bone.endEffectorMatrix());
-                   const matrixPlusDelta = bone.endEffectorMatrix(0.1);
-                   const matrixMinusDelta = bone.endEffectorMatrix(-0.1);
-                   matricesPlusDelta.push(matrixPlusDelta);
-                   matricesMinusDelta.push(matrixMinusDelta);
-                   derivativeMatrix.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
-                   bone = bone.parent;
-               }
-
-               const jacobian = derivativeMatrix;
-               const jacobianPinv = jacobian.map(m => pinv(m));
-               const normalizedJacobianPinv = math.multiply(jacobianPinv, 1 / math.norm(jacobianPinv));
-               const epsilon = 0.001;
-               const endEffectorMatrix = this.lastChild().endEffectorMatrix();
-               const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
-
-               const error = math.subtract(target, endEffectorPosition);
-               if (math.norm(error) < 2) {
-                   break;
-               }
-
-               const deltaTheta = jacobianPinv.map(matrix => {
-                   return matrix.map((row, rowIdx) => {
-                       return row.reduce((sum, value, colIdx) => {
-                           if (colIdx > 1) return sum;
-                           return sum + value * error[colIdx];
-                       }, 0);
-                   });
-               });
-
-               let jointAngles = [];
-               bone = this;
-               while (bone) {
-                   jointAngles.push(bone.angle);
-                   bone = bone.parent;
-               }
-
-               jointAngles = jointAngles.map((angle, idx) => {
-                   const adjustment = deltaTheta[idx].reduce((sum, value) => sum + value, 0);
-                   return angle + adjustment * epsilon * Math.min(math.norm(error), 1);
-               });
-
-               bone = this;
-               jointAngles.reverse();
-
-               while (bone) {
-                   if (!bone.noIk) {
-                       bone.angle = jointAngles.pop() % (2 * Math.PI);
-                       bone.applyConstraints();
-                   }
-                   bone = bone.parent;
-               }
-
-               if (math.norm(error) < 2) {
-                   break;
-               }
-           }
-       }
-
-       drawLine() {
-           ctx.beginPath();
-           const startMatrix = this.startPointMatrix();
-           const endMatrix = this.endEffectorMatrix();
-
-           const x1 = startMatrix[0][2];
-           const y1 = startMatrix[1][2];
-           const x2 = endMatrix[0][2];
-           const y2 = endMatrix[1][2];
-
-           ctx.moveTo(x1, y1);
-           ctx.lineTo(x2, y2);
-           ctx.strokeStyle = 'black';
-           ctx.lineWidth = 5;
-           ctx.stroke();
-
-           if (DRAW_GIZMOS) {
-               ctx.beginPath();
-               ctx.arc(x1, y1, 5, 0, Math.PI * 2);
-               ctx.fillStyle = 'red';
-               ctx.fill();
-
-               ctx.beginPath();
-               ctx.arc(x2, y2, 5, 0, Math.PI * 2);
-               ctx.fillStyle = 'blue';
-               ctx.fill();
-           }
-       }
-
-       draw() {
-           if (this.drawCallback) {
-               this.drawCallback();
-           } else {
-               this.drawLine();
-           }
-       }
-
-       lastChild() {
-           let bone = this;
-           while (bone.child) {
-               bone = bone.child;
-           }
-           return bone;
-       }
    }
 
    const bodyHeight = 200;
@@ -430,9 +122,12 @@
    frontLeg2Foot.setParent(frontLeg2);
 
    const head = new Bone();
+   head.image = "./images/head.png";
+   head.imageOffset = [-60,-60];
+   head.imageAngle = -1.0;
+   head.imageScale = 1.2;
    head.setParent(body);
    head.len = 80;
-   head.angle = Math.PI / 2;
    head.minAngle = -2;
    head.maxAngle = 2;
 
@@ -442,67 +137,12 @@
        jump = true;
    });
 
-   head.drawCallback = () => {
-       const startMatrix = head.startPointMatrix();
-       const endMatrix = head.endEffectorMatrix();
-       const p1 = [startMatrix[0][2], startMatrix[1][2]];
-       const p2 = [endMatrix[0][2], endMatrix[1][2]];
-       const angle = math.atan2(p2[1] - p1[1], p2[0] - p1[0]);
-       const midpoint = math.add(p1, math.multiply(math.subtract(p2, p1), 0.5));
-       const radius = math.norm(math.subtract(p2, p1)) / 2;
-       const upVector = math.subtract(p2, p1);
-       const rightVector = cat.flipX ? [-upVector[1], upVector[0]] : [upVector[1], -upVector[0]];
-
-       // Draw head
-       ctx.beginPath();
-       ctx.arc(midpoint[0], midpoint[1], radius, 0, Math.PI * 2);
-       ctx.fillStyle = '#000000';
-       ctx.fill();
-
-       // Draw nose
-       const x = midpoint[0] + 0.2 * upVector[0] + 0.35 * rightVector[0];
-       const y = midpoint[1] + 0.2 * upVector[1] + 0.35 * rightVector[1];
-       ctx.beginPath();
-       ctx.arc(x, y, 20, 0, Math.PI * 2);
-       ctx.fillStyle = '#000000';
-       ctx.fill();
-
-       // Ears triangle
-       const ears = [
-           {up: 0.9640970432815996, right: -0.0978743640371591},
-           {up: 1.1149200822997452, right: -0.31560966411808533},
-           {up: 0.820865001658949, right: -0.38008143739395395}
-       ];
-       ctx.beginPath();
-       ears.forEach((ear, idx) => {
-           const x = p1[0] + ear.up * upVector[0] + ear.right * rightVector[0];
-           const y = p1[1] + ear.up * upVector[1] + ear.right * rightVector[1];
-           if (idx === 0) {
-               ctx.moveTo(x, y);
-           } else {
-               ctx.lineTo(x, y);
-           }
-       });
-       ctx.fillStyle = '#000000';
-       ctx.fill();
-   };
-
    const ear = new Bone();
    ear.setParent(head);
    ear.position[0] = 0;
    ear.position[1] = 0;
    ear.len = 20;
    ear.angle = 0.4;
-
-   ear.drawCallback = () => {
-       const startMatrix = ear.startPointMatrix();
-       const endMatrix = ear.endEffectorMatrix();
-       const p1 = [startMatrix[0][2], startMatrix[1][2]];
-       const p2 = [endMatrix[0][2], endMatrix[1][2]];
-       const angle = math.atan2(p2[1] - p1[1], p2[0] - p1[0]);
-       const midpoint = math.add(p1, math.multiply(math.subtract(p2, p1), 0.5));
-       const radius = math.norm(math.subtract(p2, p1)) / 2;
-   };
 
    const tail1 = new Bone();
    tail1.setParent(backBody);
@@ -612,6 +252,9 @@
    let lastTime = performance.now();
 
    function update() {
+       //head.imageOffset[1] = -mouse[1];
+       //console.log(head.imageOffset[1]);
+
        const currentTime = performance.now();
        const deltaTime = currentTime - lastTime;
 
