@@ -153,6 +153,11 @@ tail1.position[0] = 0;
 tail1.position[1] = 0;
 tail1.len = 50;
 tail1.angle = -0.4;
+tail1.image = "./images/tail.png";
+tail1.imageOffset = [-20, -60];
+tail1.imageAngle = Math.PI/2;
+tail1.imageScale = 0.5;
+
 
 const tail2 = new Bone();
 tail2.setParent(tail1);
@@ -160,6 +165,12 @@ tail2.position[0] = 0;
 tail2.position[1] = 0;
 tail2.len = 50;
 tail2.angle = -0.2;
+tail2.image = "./images/tail.png";
+tail2.imageOffset = [-20, -60];
+tail2.imageAngle = Math.PI/2;
+tail2.imageScale = 0.5;
+
+
 
 const tail3 = new Bone();
 tail3.setParent(tail2);
@@ -167,6 +178,11 @@ tail3.position[0] = 0;
 tail3.position[1] = 0;
 tail3.len = 50;
 tail3.angle = -0.2;
+tail3.image = "./images/tail.png";
+tail3.imageOffset = [-20, -60];
+tail3.imageAngle = Math.PI/2;
+tail3.imageScale = 0.5;
+
 
 
 bones.forEach(b => b.saveRelaxedState());
