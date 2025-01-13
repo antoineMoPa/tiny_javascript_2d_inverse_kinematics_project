@@ -1,6 +1,5 @@
 const canvas = document.getElementById('animationCanvas');
 const ctx = canvas.getContext('2d');
-const BW = document.queryS
 
 // Set canvas size to fill the screen
 function resizeCanvas() {
