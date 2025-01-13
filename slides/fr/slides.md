@@ -301,7 +301,7 @@ Répeter jusqu'à ce que l'erreur soit assez petite:
 <img src="/images/cat.svg" alt="image" style="max-height:300px"/>
 </div>
 
-https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/
+https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/?bone_mode&gizmos
 
 
 ---

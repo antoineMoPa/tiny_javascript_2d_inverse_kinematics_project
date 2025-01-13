@@ -1,5 +1,9 @@
 const DRAW_GIZMOS = document.location.search.includes("gizmos");
+const BONE_MODE = document.location.search.includes("bone_mode");
 
+if (BONE_MODE) {
+    document.body.style.background = "white";
+}
 
 class Bone {
     parent = null;
@@ -339,11 +343,12 @@ class Bone {
     }
 
     draw() {
+        if (BONE_MODE) {
+            this.drawLine();
+            return;
+        }
         if (this._image) {
             this.drawImage();
-        }
-        if (DRAW_GIZMOS) {
-            this.drawLine();
         }
     }
 
