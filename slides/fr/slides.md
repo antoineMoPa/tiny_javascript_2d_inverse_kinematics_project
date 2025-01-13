@@ -298,10 +298,21 @@ Répeter jusqu'à ce que l'erreur soit assez petite:
 
 
 <div class="flex justify-center">
-<img src="/images/cat.svg" alt="image" style="max-height:300px"/>
+<img src="/images/cat.svg" alt="image" style="max-height:280px"/>
 </div>
 
 https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/?bone_mode&gizmos
+
+---
+
+# 📚 **Démo 2**
+
+<br/>
+
+Démo d'une chaine cinématique d'une longueur arbitraire.
+
+
+https://antoinemopa.github.io/tiny_javascript_2d_inverse_kinematics_project/long_kinematics_chain.html?bone_mode&bone_quantity=7
 
 
 ---

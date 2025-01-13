@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>long IK chain</title>
+  <style>
+    /* Minimal CSS normalization */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: white;
+    }
+
+    canvas {
+      display: block; /* Removes inline gap below the canvas */
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <script src="./math.min.js"></script>
+  <canvas id="animationCanvas"></canvas>
+  <script src="bone.js"></script>
+  <script src="long_ik.js"></script>
+</body>
+</html>

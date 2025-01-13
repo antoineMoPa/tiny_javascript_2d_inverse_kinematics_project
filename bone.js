@@ -69,10 +69,11 @@ class Bone {
     }
 
     applyConstraints() {
-        if (this.angle < this.minAngle) {
+        this.angle = ((this.angle + Math.PI/2) % (2 * Math.PI)) - Math.PI/2;
+        if (this.minAngle !== null && this.angle < this.minAngle) {
             this.angle = this.minAngle;
         }
-        if (this.angle > this.maxAngle) {
+        if (this.maxAngle !== null && this.angle > this.maxAngle) {
             this.angle = this.maxAngle;
         }
     }
@@ -200,8 +201,8 @@ class Bone {
         }
     }
 
-    ik(target) {
-        const MAX_IT = 20;
+    ik(target, { maxIt } = { maxIt: 20 }) {
+        const MAX_IT = maxIt;
         for (let i = 0; i < MAX_IT; i++) {
             const matrices = [];
             const matricesPlusDelta = [];
@@ -222,12 +223,14 @@ class Bone {
 
             const jacobian = derivativeMatrix;
             const jacobianPinv = jacobian.map(m => pinv(m));
-            const normalizedJacobianPinv = math.multiply(jacobianPinv, 1 / math.norm(jacobianPinv));
-            const epsilon = 0.001;
+            const normalizedJacobianPinv = math.multiply(jacobianPinv, 1 / jacobianPinv);
             const endEffectorMatrix = this.lastChild().endEffectorMatrix();
             const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
 
             const error = math.subtract(target, endEffectorPosition);
+
+            const epsilon = 0.001;
+
             if (math.norm(error) < 2) {
                 break;
             }
@@ -258,7 +261,7 @@ class Bone {
 
             while (bone) {
                 if (!bone.noIk) {
-                    bone.angle = jointAngles.pop() % (2 * Math.PI);
+                    bone.angle = jointAngles.pop();
                     bone.applyConstraints();
                 }
                 bone = bone.parent;
