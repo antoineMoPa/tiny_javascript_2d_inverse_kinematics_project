@@ -44,6 +44,7 @@ body.imageOffset = [-50, -30];
 body.imageAngle = Math.PI;
 body.imageScale = 2.3;
 body.setParent(cat);
+body.zIndex = 1;
 
 const backBody = new Bone();
 backBody.setParent(cat);
@@ -59,16 +60,18 @@ backLeg1.setParent(backBody);
 backLeg1.position[0] = 0;
 backLeg1.position[1] = 0;
 backLeg1.image = "./images/leg.png";
-backLeg1.imageOffset = [-30, -40];
+backLeg1.imageOffset = [-50, -50];
 backLeg1.imageAngle = 3 * Math.PI / 2;
 backLeg1.imageScale = 0.6;
+backLeg1.zIndex = 2;
 
 const backLeg1Foot = new Bone();
 backLeg1Foot.setParent(backLeg1);
 backLeg1Foot.image = "./images/paw.png";
-backLeg1Foot.imageOffset = [-20, -40];
+backLeg1Foot.imageOffset = [-40, -40];
 backLeg1Foot.imageAngle = -0.5 * Math.PI;
 backLeg1Foot.imageScale = 0.4;
+backLeg1Foot.zIndex = 2;
 
 
 const backLeg2 = new Bone();
@@ -76,7 +79,7 @@ backLeg2.setParent(backBody);
 backLeg2.position[0] = 0;
 backLeg2.position[1] = 0;
 backLeg2.image = "./images/leg.png";
-backLeg2.imageOffset = [-30, -40];
+backLeg2.imageOffset = [-50, -50];
 backLeg2.imageAngle = 3 * Math.PI / 2;
 backLeg2.imageScale = 0.6;
 
@@ -97,14 +100,15 @@ frontLeg1.image = "./images/leg.png";
 frontLeg1.imageOffset = [00, -20];
 frontLeg1.imageAngle = 3 * Math.PI / 2;
 frontLeg1.imageScale = 0.6;
-
+frontLeg1.zIndex = 2;
 
 const frontLeg1Foot = new Bone();
 frontLeg1Foot.setParent(frontLeg1);
 frontLeg1Foot.image = "./images/paw.png";
-frontLeg1Foot.imageOffset = [-10, -70];
+frontLeg1Foot.imageOffset = [0, -80];
 frontLeg1Foot.imageAngle = -1 / 2 * Math.PI - 0.2;
 frontLeg1Foot.imageScale = 0.4;
+frontLeg1Foot.zIndex = 3;
 
 
 const frontLeg2 = new Bone();
@@ -112,14 +116,14 @@ frontLeg2.angle = -Math.PI / 2;
 frontLeg2.setParent(body);
 frontLeg2.position[1] = 0;
 frontLeg2.image = "./images/leg.png";
-frontLeg2.imageOffset = [00, -20];
+frontLeg2.imageOffset = [0, -20];
 frontLeg2.imageAngle = 3 * Math.PI / 2;
 frontLeg2.imageScale = 0.6;
 
 const frontLeg2Foot = new Bone();
 frontLeg2Foot.setParent(frontLeg2);
 frontLeg2Foot.image = "./images/paw.png";
-frontLeg2Foot.imageOffset = [-10, -70];
+frontLeg2Foot.imageOffset = [0, -80];
 frontLeg2Foot.imageAngle = -1 / 2 * Math.PI - 0.2;
 frontLeg2Foot.imageScale = 0.4;
 
@@ -131,8 +135,9 @@ head.imageAngle = -1.0 + Math.PI;
 head.imageScale = 1.5;
 head.setParent(body);
 head.len = 80;
-head.minAngle = -2;
+head.minAngle = -1;
 head.maxAngle = 2;
+head.zIndex = 2;
 
 let jump = false;
 
@@ -171,7 +176,6 @@ tail2.imageAngle = Math.PI/2;
 tail2.imageScale = 0.5;
 
 
-
 const tail3 = new Bone();
 tail3.setParent(tail2);
 tail3.position[0] = 0;
@@ -182,7 +186,6 @@ tail3.image = "./images/tail.png";
 tail3.imageOffset = [-20, -60];
 tail3.imageAngle = Math.PI/2;
 tail3.imageScale = 0.5;
-
 
 
 bones.forEach(b => b.saveRelaxedState());
@@ -353,7 +356,7 @@ function update() {
     tail3.angle = 0.2 * Math.cos(performance.now() * 0.002 + 2.0) * Math.cos(performance.now() * 0.0001);
 
 
-    bones.forEach(b => b.draw());
+    bones.sort((a, b) => a.zIndex - b.zIndex).forEach(b => b.draw());
 
     // ctx.beginPath();
     // ctx.arc(mouse[0], mouse[1], 5, 0, Math.PI * 2);

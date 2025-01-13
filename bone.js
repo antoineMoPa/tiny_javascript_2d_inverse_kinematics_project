@@ -1,4 +1,4 @@
-const DRAW_GIZMOS = false;
+const DRAW_GIZMOS = document.location.search.includes("gizmos");
 
 
 class Bone {
@@ -16,6 +16,7 @@ class Bone {
     imageOffset = [0, 0];
     imageAngle = 0;
     imageScale = 1;
+    zIndex = 0;
 
     state = [];
     relaxedState = null;
