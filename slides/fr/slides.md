@@ -48,7 +48,7 @@ transition: fade-out
 class="w-40 h-40 rounded-full float-left mr-10">
   Antoine Morin-Paulhus
 
-  Team Lead / Développeur chez <a href="http://lumen5.com" target="_blank">Lumen5</a>
+  Team Lead chez <a href="http://lumen5.com" target="_blank">Lumen5</a>
 
   GitHub: @antoineMoPa
 
@@ -100,7 +100,7 @@ $M = \begin{bmatrix}
 En termes de développeur: une table.
 
 
-```
+```javascript
 const M = [
     [1, 2, 3],
     [4, 5, 6],
@@ -148,7 +148,7 @@ $
 <br/>
 
 Avec math.js:
-```
+```javascript
 math.multiply(M1, M2);
 ```
 
@@ -234,7 +234,7 @@ Chaque joint possède sa matrice de transformation.
 
 Exemple de construction d'une matrice pour un joint pivot en 2D:
 
-```
+```javascript
 matriceJoint () {
     const c = Math.cos(this.angle);
     const s = Math.sin(this.angle);
@@ -256,7 +256,7 @@ matriceJoint () {
 
 Exemple de construction d'une matrice pour un joint:
 
-```
+```javascript
 transformMatrix() {
     const T = this.matriceJoint();
     cont P = this.parent.transformMatrix();
@@ -277,6 +277,60 @@ Comment placer les joints pour que l'effecteur terminal atteigne son objectif?
 
 ---
 
+# 📚 **Calcul de l'impact des joints**
+
+Ici, on calcule l'impact d'un changement d'angle sur la position de l'effecteur final:
+
+```javascript
+class Bone {
+  localEffectorMatrix(deltaAngle = 0) {
+      const c = Math.cos(this.angle + deltaAngle);
+      const s = Math.sin(this.angle + deltaAngle);
+      const x = this.len * c;
+      const y = this.len * s;
+
+      return [
+            [c, -s, x],
+            [s, c, y],
+            [0, 0, 1]
+      ];
+  }
+
+  transformMatrix(deltaAngle = 0) {
+      const T = this.localEffectorMatrix(deltaAngle);
+
+      return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T);
+  }
+
+  // ...
+}
+```
+
+---
+
+# 📚 **Jacobienne**
+
+
+```javascript
+const jacobian = [];
+
+let bone = this;
+
+while (bone) {
+    const matrixPlusDelta = bone.endEffectorMatrix(0.1);
+    const matrixMinusDelta = bone.endEffectorMatrix(-0.1);
+
+    jacobian.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
+
+    bone = bone.parent;
+}
+
+// La pseudo-inverse va permettre de faire le chemin-inverse
+const jacobianPinv = jacobian.map(m => pinv(m));
+```
+
+---
+
 # 📚 **Cinématique inverse - Algo**
 
 Comment placer les joints pour que l'effecteur terminal atteigne son objectif?
@@ -288,6 +342,23 @@ Répeter jusqu'à ce que l'erreur soit assez petite:
 4. Calculer l'erreur actuelle de l'effecteur terminal.
 3. Modifier les angles de façon à minimiser l'erreur.
 
+
+---
+
+# Applications de la cinématique inverse
+
+<br/>
+
+* Bras robotiques
+* Jeu vidéo
+* Cinéma
+
+<img src="./images/sintel-hand.png" style="max-height:200px"/>
+<p style="font-size:10px">
+By © copyright Blender Foundation / www.sintel.org, CC BY-SA 3.0, https://commons.wikimedia.org/w/index.php?curid=52098322
+</p>
+
+[Exemple blender](https://youtu.be/c1iv0dbtMJ4?t=161)
 
 ---
 

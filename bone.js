@@ -113,7 +113,6 @@ class Bone {
     }
 
     transformMatrix(deltaAngle = 0) {
-        // todo: offset is not working
         const T = this.localEffectorMatrix(deltaAngle);
 
         return math.multiply(this.offsetMatrix(), this.parentMatrix(deltaAngle), T);
@@ -204,37 +203,28 @@ class Bone {
     ik(target, { maxIt } = { maxIt: 20 }) {
         const MAX_IT = maxIt;
         for (let i = 0; i < MAX_IT; i++) {
-            const matrices = [];
-            const matricesPlusDelta = [];
-            const matricesMinusDelta = [];
-            const derivativeMatrix = [];
+            const jacobian = [];
 
             let bone = this;
 
             while (bone) {
-                matrices.push(bone.endEffectorMatrix());
                 const matrixPlusDelta = bone.endEffectorMatrix(0.1);
                 const matrixMinusDelta = bone.endEffectorMatrix(-0.1);
-                matricesPlusDelta.push(matrixPlusDelta);
-                matricesMinusDelta.push(matrixMinusDelta);
-                derivativeMatrix.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
+                jacobian.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
                 bone = bone.parent;
             }
 
-            const jacobian = derivativeMatrix;
             const jacobianPinv = jacobian.map(m => pinv(m));
-            const normalizedJacobianPinv = math.multiply(jacobianPinv, 1 / jacobianPinv);
             const endEffectorMatrix = this.lastChild().endEffectorMatrix();
             const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
 
             const error = math.subtract(target, endEffectorPosition);
 
-            const epsilon = 0.001;
-
             if (math.norm(error) < 2) {
                 break;
             }
 
+            // TODO Est-ce qu'on peut juste multiplier?
             const deltaTheta = jacobianPinv.map(matrix => {
                 return matrix.map((row, rowIdx) => {
                     return row.reduce((sum, value, colIdx) => {
@@ -251,9 +241,11 @@ class Bone {
                 bone = bone.parent;
             }
 
+            const epsilon = 0.001;
+
             jointAngles = jointAngles.map((angle, idx) => {
                 const adjustment = deltaTheta[idx].reduce((sum, value) => sum + value, 0);
-                return angle + adjustment * epsilon * Math.min(math.norm(error), 1);
+                return angle + adjustment * epsilon;
             });
 
             bone = this;
