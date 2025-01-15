@@ -25,33 +25,40 @@ function pinv(matrix) {
 const bodyHeight = 200;
 const floor = window.innerHeight;
 
+let scale = 1.0;
+
+// Phone / tablet: reduce scale
+if (window.innerWidth < 800) {
+    scale = 0.4;
+}
+
 const cat = new Bone();
 cat.stableAngle = -0.05;
 cat.angle = cat.stableAngle;
 cat.position[0] = window.innerWidth / 2;
 cat.position[1] = floor - bodyHeight;
-cat.len = 100;
+cat.len = 100 * scale;
 cat.noIk = true;
 cat.flipX = false;
 
 const body = new Bone();
 body.angle = Math.PI - 0.1;
-body.len = 100;
 body.noIk = true;
 body.flipX = false;
 body.image = "./images/body.png";
-body.imageOffset = [-50, -30];
+body.imageOffset = [-50 * scale, -30 * scale];
 body.imageAngle = Math.PI;
 body.imageScale = 2.3;
 body.setParent(cat);
 body.zIndex = 1;
+body.len = 100 * scale;
 
 const backBody = new Bone();
 backBody.setParent(cat);
 backBody.angle = 0.1;
 backBody.position[0] = 0;
 backBody.position[1] = 0;
-backBody.len = 100;
+backBody.len = 100 * scale;
 backBody.noIk = true;
 
 
@@ -60,18 +67,20 @@ backLeg1.setParent(backBody);
 backLeg1.position[0] = 0;
 backLeg1.position[1] = 0;
 backLeg1.image = "./images/leg.png";
-backLeg1.imageOffset = [-50, -50];
+backLeg1.imageOffset = [-50 * scale, -50 * scale];
 backLeg1.imageAngle = 3 * Math.PI / 2;
 backLeg1.imageScale = 0.6;
 backLeg1.zIndex = 2;
+backLeg1.len = 100 * scale;
 
 const backLeg1Foot = new Bone();
 backLeg1Foot.setParent(backLeg1);
 backLeg1Foot.image = "./images/paw.png";
-backLeg1Foot.imageOffset = [-40, -40];
+backLeg1Foot.imageOffset = [-40 * scale, -40 * scale];
 backLeg1Foot.imageAngle = -0.5 * Math.PI;
 backLeg1Foot.imageScale = 0.4;
 backLeg1Foot.zIndex = 2;
+backLeg1Foot.len = 100 * scale;
 
 
 const backLeg2 = new Bone();
@@ -79,17 +88,19 @@ backLeg2.setParent(backBody);
 backLeg2.position[0] = 0;
 backLeg2.position[1] = 0;
 backLeg2.image = "./images/leg.png";
-backLeg2.imageOffset = [-50, -50];
+backLeg2.imageOffset = [-50 * scale, -50 * scale];
 backLeg2.imageAngle = 3 * Math.PI / 2;
 backLeg2.imageScale = 0.6;
+backLeg2.len = 100 * scale;
 
 
 const backLeg2Foot = new Bone();
 backLeg2Foot.setParent(backLeg2);
 backLeg2Foot.image = "./images/paw.png";
-backLeg2Foot.imageOffset = [-20, -40];
+backLeg2Foot.imageOffset = [-20 * scale, -40 * scale];
 backLeg2Foot.imageAngle = -0.5 * Math.PI;
 backLeg2Foot.imageScale = 0.4;
+backLeg2Foot.len = 100 * scale;
 
 
 const frontLeg1 = new Bone();
@@ -97,18 +108,20 @@ frontLeg1.angle = -Math.PI / 2;
 frontLeg1.setParent(body);
 frontLeg1.position[1] = 0;
 frontLeg1.image = "./images/leg.png";
-frontLeg1.imageOffset = [00, -20];
+frontLeg1.imageOffset = [00, -20 * scale];
 frontLeg1.imageAngle = 3 * Math.PI / 2;
 frontLeg1.imageScale = 0.6;
 frontLeg1.zIndex = 2;
+frontLeg1.len = 100 * scale;
 
 const frontLeg1Foot = new Bone();
 frontLeg1Foot.setParent(frontLeg1);
 frontLeg1Foot.image = "./images/paw.png";
-frontLeg1Foot.imageOffset = [0, -80];
+frontLeg1Foot.imageOffset = [0, -80 * scale];
 frontLeg1Foot.imageAngle = -1 / 2 * Math.PI - 0.2;
 frontLeg1Foot.imageScale = 0.4;
 frontLeg1Foot.zIndex = 3;
+frontLeg1Foot.len = 100 * scale;
 
 
 const frontLeg2 = new Bone();
@@ -116,28 +129,30 @@ frontLeg2.angle = -Math.PI / 2;
 frontLeg2.setParent(body);
 frontLeg2.position[1] = 0;
 frontLeg2.image = "./images/leg.png";
-frontLeg2.imageOffset = [0, -20];
+frontLeg2.imageOffset = [0, -20 * scale];
 frontLeg2.imageAngle = 3 * Math.PI / 2;
 frontLeg2.imageScale = 0.6;
+frontLeg2.len = 100 * scale;
 
 const frontLeg2Foot = new Bone();
 frontLeg2Foot.setParent(frontLeg2);
 frontLeg2Foot.image = "./images/paw.png";
-frontLeg2Foot.imageOffset = [0, -80];
+frontLeg2Foot.imageOffset = [0, -80 * scale];
 frontLeg2Foot.imageAngle = -1 / 2 * Math.PI - 0.2;
 frontLeg2Foot.imageScale = 0.4;
+frontLeg2Foot.len = 100 * scale;
 
 
 const head = new Bone();
 head.image = "./images/head.png";
-head.imageOffset = [-60,-60];
+head.imageOffset = [-60 * scale,-60 * scale];
 head.imageAngle = -1.0 + Math.PI;
 head.imageScale = 1.5;
 head.setParent(body);
-head.len = 80;
 head.minAngle = -1;
 head.maxAngle = 2;
 head.zIndex = 2;
+head.len = 80 * scale;
 
 let jump = false;
 
@@ -149,17 +164,17 @@ const ear = new Bone();
 ear.setParent(head);
 ear.position[0] = 0;
 ear.position[1] = 0;
-ear.len = 20;
+ear.len = 20 * scale;
 ear.angle = 0.4;
 
 const tail1 = new Bone();
 tail1.setParent(backBody);
 tail1.position[0] = 0;
 tail1.position[1] = 0;
-tail1.len = 50;
+tail1.len = 50 * scale;
 tail1.angle = -0.4;
 tail1.image = "./images/tail.png";
-tail1.imageOffset = [-20, -60];
+tail1.imageOffset = [-20 * scale, -60 * scale];
 tail1.imageAngle = Math.PI/2;
 tail1.imageScale = 0.5;
 
@@ -168,10 +183,10 @@ const tail2 = new Bone();
 tail2.setParent(tail1);
 tail2.position[0] = 0;
 tail2.position[1] = 0;
-tail2.len = 50;
+tail2.len = 50 * scale;
 tail2.angle = -0.2;
 tail2.image = "./images/tail.png";
-tail2.imageOffset = [-20, -60];
+tail2.imageOffset = [-20 * scale, -60 * scale];
 tail2.imageAngle = Math.PI/2;
 tail2.imageScale = 0.5;
 
@@ -180,10 +195,10 @@ const tail3 = new Bone();
 tail3.setParent(tail2);
 tail3.position[0] = 0;
 tail3.position[1] = 0;
-tail3.len = 50;
+tail3.len = 50 * scale;
 tail3.angle = -0.2;
 tail3.image = "./images/tail.png";
-tail3.imageOffset = [-20, -60];
+tail3.imageOffset = [-20 * scale, -60 * scale];
 tail3.imageAngle = Math.PI/2;
 tail3.imageScale = 0.5;
 
@@ -199,7 +214,7 @@ function moveLegToNearestGridSpot(leg, offset) {
     leg.popState();
     let direction = leg.rootParent().flipX ? 1 : -1;
 
-    const size = 70;
+    const size = 70 * scale;
     let x = end[0] - offset * size * 2;
 
 
