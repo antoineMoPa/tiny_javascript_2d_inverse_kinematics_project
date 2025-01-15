@@ -228,18 +228,17 @@ class Bone {
 
             jacobian = math.transpose(jacobian); // Rows become columns
 
-            const jacobianPinv = pinv(jacobian);
             const endEffectorMatrix = this.lastChild().endEffectorMatrix();
             const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
 
             const error = math.subtract(target, endEffectorPosition);
 
-            const deltaTheta = math.multiply(jacobianPinv, error);
+            const deltaThetas = math.multiply(pinv(jacobian), error);
 
             const epsilon = 0.3;
 
             for (let i = 0; i < bones.length; i++) {
-                bones[i].angle += deltaTheta[i] * epsilon;
+                bones[i].angle += deltaThetas[i] * epsilon;
             }
 
             if (math.norm(error) < 1) {

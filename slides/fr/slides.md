@@ -312,21 +312,24 @@ class Bone {
 
 
 ```javascript
-const jacobian = [];
-
 let bone = this;
 
 while (bone) {
     const matrixPlusDelta = bone.endEffectorMatrix(0.1);
     const matrixMinusDelta = bone.endEffectorMatrix(-0.1);
+    const diff = math.subtract(matrixPlusDelta, matrixMinusDelta);
 
-    jacobian.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
+    jacobian.push([
+        diff[0][2], // Position x
+        diff[1][2], // Position y
+    ]);
+
+    if (bone.noIk) {
+        break;
+    }
 
     bone = bone.parent;
 }
-
-// La pseudo-inverse va permettre de faire le chemin-inverse
-const jacobianPinv = jacobian.map(m => pinv(m));
 ```
 
 ---
@@ -337,11 +340,17 @@ Comment placer les joints pour que l'effecteur terminal atteigne son objectif?
        
 Répeter jusqu'à ce que l'erreur soit assez petite:
 1. Trouver l'impact d'un changement d'angle de chaque joint sur la position de l'effecteur terminal.
-   - (On appelle ceci la matrice jacobienne)
-2. Déterminer la pseudo-inverse de la jacobienne `math.pinv()`.
-4. Calculer l'erreur actuelle de l'effecteur terminal.
+   - On appelle ceci la matrice jacobienne.
+2. Calculer l'erreur actuelle de l'effecteur terminal. (delta x, delta y)
 3. Modifier les angles de façon à minimiser l'erreur.
+   - On utilise l'inverse de la jacobienne pour faire varier les joints dans la bonne direction et au bon taux.
 
+
+<br/>
+
+```javascript
+const deltaThetas = math.multiply(pinv(jacobian), error);
+```
 
 ---
 
