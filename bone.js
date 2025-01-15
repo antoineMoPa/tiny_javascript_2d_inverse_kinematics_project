@@ -190,7 +190,6 @@ class Bone {
     update(deltaTime) {
         const damping = 0.99;
         if (math.norm(this.acceleration) > 0.001){
-            //this.acceleration = math.multiply(this.acceleration, damping);
             this.position = math.add(this.position, math.multiply(this.acceleration, deltaTime));
         }
 
@@ -200,66 +199,50 @@ class Bone {
         }
     }
 
-    ik(target, { maxIt } = { maxIt: 20 }) {
+    ik(target, { maxIt } = { maxIt: 30 }) {
         const MAX_IT = maxIt;
         for (let i = 0; i < MAX_IT; i++) {
-            const jacobian = [];
+            let jacobian = [];
 
             let bone = this;
+            let bones = [];
 
             while (bone) {
+                // Find impact of a angle change on the end effector position
                 const matrixPlusDelta = bone.endEffectorMatrix(0.1);
                 const matrixMinusDelta = bone.endEffectorMatrix(-0.1);
-                jacobian.push(math.subtract(matrixPlusDelta, matrixMinusDelta));
+                const diff = math.subtract(matrixPlusDelta, matrixMinusDelta);
+
+                jacobian.push([
+                    diff[0][2], // Position x
+                    diff[1][2], // Position y
+                ]);
+
+                if (bone.noIk) {
+                    break;
+                }
+
+                bones.push(bone);
                 bone = bone.parent;
             }
 
-            const jacobianPinv = jacobian.map(m => pinv(m));
+            jacobian = math.transpose(jacobian); // Rows become columns
+
+            const jacobianPinv = pinv(jacobian);
             const endEffectorMatrix = this.lastChild().endEffectorMatrix();
             const endEffectorPosition = [endEffectorMatrix[0][2], endEffectorMatrix[1][2]];
 
             const error = math.subtract(target, endEffectorPosition);
 
-            if (math.norm(error) < 2) {
-                break;
+            const deltaTheta = math.multiply(jacobianPinv, error);
+
+            const epsilon = 0.3;
+
+            for (let i = 0; i < bones.length; i++) {
+                bones[i].angle += deltaTheta[i] * epsilon;
             }
 
-            // TODO Est-ce qu'on peut juste multiplier?
-            const deltaTheta = jacobianPinv.map(matrix => {
-                return matrix.map((row, rowIdx) => {
-                    return row.reduce((sum, value, colIdx) => {
-                        if (colIdx > 1) return sum;
-                        return sum + value * error[colIdx];
-                    }, 0);
-                });
-            });
-
-            let jointAngles = [];
-            bone = this;
-            while (bone) {
-                jointAngles.push(bone.angle);
-                bone = bone.parent;
-            }
-
-            const epsilon = 0.001;
-
-            jointAngles = jointAngles.map((angle, idx) => {
-                const adjustment = deltaTheta[idx].reduce((sum, value) => sum + value, 0);
-                return angle + adjustment * epsilon;
-            });
-
-            bone = this;
-            jointAngles.reverse();
-
-            while (bone) {
-                if (!bone.noIk) {
-                    bone.angle = jointAngles.pop();
-                    bone.applyConstraints();
-                }
-                bone = bone.parent;
-            }
-
-            if (math.norm(error) < 2) {
+            if (math.norm(error) < 1) {
                 break;
             }
         }
